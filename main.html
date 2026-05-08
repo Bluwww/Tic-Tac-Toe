@@ -19,9 +19,11 @@
             transition: filter 0.8s ease-in-out;
         }
 
-        /* Base blur class */
+        /* Variabel Blur default */
+        :root { --blur-amount: 6px; }
+
         .video-blurred {
-            filter: blur(var(--blur-amount, 6px)) brightness(0.7); 
+            filter: blur(var(--blur-amount)) brightness(0.7); 
         }
 
         .video-overlay {
@@ -69,6 +71,16 @@
 
         .btn-horizontal-group { display: flex; gap: 15px; flex-wrap: wrap; max-width: 600px; }
         .size-btn { width: 140px; justify-content: center; text-align: center; }
+
+        /* GLOWING EFFECT SUPER TERANG UNTUK TOMBOL AKTIF */
+        .selected-opt { 
+            border: 2px solid #ffffff !important; 
+            background: rgba(255, 255, 255, 0.25) !important;
+            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3) !important;
+            transform: scale(1.05);
+            color: #ffffff !important;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+        }
 
         /* SETTINGS SPECIFIC */
         .settings-content { display: flex; gap: 50px; align-items: flex-start; }
@@ -161,7 +173,7 @@
                 <div class="settings-column">
                     <div class="setting-item">
                         <span class="setting-label">BLUR INTENSITY</span>
-                        <div class="btn-horizontal-group">
+                        <div class="btn-horizontal-group" id="blur-opts">
                             <button class="menu-btn size-btn" style="width: 100px; padding: 10px;" onclick="setBlur(2)">Low</button>
                             <button class="menu-btn size-btn" style="width: 100px; padding: 10px;" onclick="setBlur(6)">Medium</button>
                             <button class="menu-btn size-btn" style="width: 100px; padding: 10px;" onclick="setBlur(12)">High</button>
@@ -208,7 +220,7 @@
                 <div class="minimax" style="font-size: 50px;">BATTLEFIELD</div>
                 <div class="tagline">Select your board size</div>
             </div>
-            <div class="btn-horizontal-group" style="margin-top: 20px;">
+            <div class="btn-horizontal-group" id="size-opts" style="margin-top: 20px;">
                 <button class="menu-btn size-btn" onclick="chooseSize(3)"><span class="btn-title">3 x 3</span></button>
                 <button class="menu-btn size-btn" onclick="chooseSize(5)"><span class="btn-title">5 x 5</span></button>
                 <button class="menu-btn size-btn" onclick="chooseSize(6)"><span class="btn-title">6 x 6</span></button>
@@ -224,7 +236,7 @@
                 <div class="minimax" style="font-size: 50px;">CHALLENGE</div>
                 <div class="tagline">Select your opponent level</div>
             </div>
-            <div class="btn-horizontal-group" style="margin-top: 20px;">
+            <div class="btn-horizontal-group" id="diff-opts" style="margin-top: 20px;">
                 <button class="menu-btn size-btn" onclick="setDifficulty('Easy')"><span class="btn-title">EASY</span></button>
                 <button class="menu-btn size-btn" onclick="setDifficulty('Medium')"><span class="btn-title">MEDIUM</span></button>
                 <button class="menu-btn size-btn" onclick="setDifficulty('Hard')"><span class="btn-title">HARD</span></button>
@@ -240,7 +252,7 @@
                 <div class="minimax" style="font-size: 50px;">INITIATIVE</div>
                 <div class="tagline">Who will make the first move?</div>
             </div>
-            <div class="btn-horizontal-group" style="margin-top: 20px;">
+            <div class="btn-horizontal-group" id="turn-opts" style="margin-top: 20px;">
                 <button class="menu-btn size-btn" onclick="setFirstTurn('Player')"><span class="btn-title">PLAYER</span></button>
                 <button class="menu-btn size-btn" onclick="setFirstTurn('Bot')"><span class="btn-title">BOT</span></button>
             </div>
@@ -286,55 +298,81 @@
             </div>
         </div>
 
-        <div class="bottom-left">Ver. 1.7.1</div>
+        <div class="bottom-left">Ver. 1.8.2</div>
         <div class="bottom-right">Made by Jeremy, Phillipo, Rendra</div>
     </div>
 
     <script>
-        // --- UI NAVIGATION ---
+        // --- GAME LOGIC STATE ---
+        let currentSize = 3;
+        let currentDifficulty = 'Hard';
+        let firstTurnChoice = 'Player';
+        let currentBlur = 6;
+        let winCondition = 3;
+        let board = [], pScore = 0, bScore = 0, isPlayerTurn = true, gameActive = false;
+
+        // --- UI NAVIGATION & HIGHLIGHT LOGIC ---
         function showScreen(screenId) {
             document.querySelectorAll('.ui-container').forEach(el => el.classList.add('hidden'));
             document.getElementById(screenId).classList.remove('hidden');
-
             const videoBg = document.getElementById('bg-video');
             if (screenId === 'lobby-screen') {
                 videoBg.classList.remove('video-blurred'); 
             } else {
                 videoBg.classList.add('video-blurred'); 
             }
+            syncHighlights();
+        }
+
+        function syncHighlights() {
+            // Update Glow untuk Blur
+            document.querySelectorAll('#blur-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
+            if(currentBlur === 2) document.querySelector('#blur-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
+            if(currentBlur === 6) document.querySelector('#blur-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
+            if(currentBlur === 12) document.querySelector('#blur-opts .menu-btn:nth-child(3)').classList.add('selected-opt');
+
+            // Update Glow untuk Ukuran Papan
+            document.querySelectorAll('#size-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
+            if(currentSize === 3) document.querySelector('#size-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
+            if(currentSize === 5) document.querySelector('#size-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
+            if(currentSize === 6) document.querySelector('#size-opts .menu-btn:nth-child(3)').classList.add('selected-opt');
+
+            // Update Glow untuk Difficulty
+            document.querySelectorAll('#diff-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
+            if(currentDifficulty === 'Easy') document.querySelector('#diff-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
+            if(currentDifficulty === 'Medium') document.querySelector('#diff-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
+            if(currentDifficulty === 'Hard') document.querySelector('#diff-opts .menu-btn:nth-child(3)').classList.add('selected-opt');
+
+            // Update Glow untuk First Turn
+            document.querySelectorAll('#turn-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
+            if(firstTurnChoice === 'Player') document.querySelector('#turn-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
+            if(firstTurnChoice === 'Bot') document.querySelector('#turn-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
         }
 
         // --- SETTINGS LOGIC ---
         function setBlur(amount) {
+            currentBlur = amount;
             document.documentElement.style.setProperty('--blur-amount', amount + 'px');
+            syncHighlights();
         }
 
         function resetDefaults() {
-            setBlur(6); // Kembali ke settingan Medium Blur
+            setBlur(6);
         }
 
         function toggleAudio(type) { console.log(type + ' toggled'); }
 
-        // --- GAME LOGIC STATE ---
-        let currentSize = 3;
-        let currentDifficulty = 'Hard';
-        let firstTurnChoice = 'Player';
-        let winCondition = 3;
-        let board = [];
-        let pScore = 0;
-        let bScore = 0;
-        let isPlayerTurn = true;
-        let gameActive = false;
-
         function chooseSize(size) {
             currentSize = size;
-            showScreen('difficulty-screen');
+            syncHighlights();
+            setTimeout(() => showScreen('difficulty-screen'), 300);
         }
 
         function setDifficulty(diff) {
             currentDifficulty = diff;
             winCondition = currentSize === 3 ? 3 : 4; 
-            showScreen('turn-screen');
+            syncHighlights();
+            setTimeout(() => showScreen('turn-screen'), 300);
         }
 
         function setFirstTurn(choice) {
@@ -342,8 +380,8 @@
             document.getElementById('game-tip').innerText = `Tip: Get ${winCondition} in a row to win!`;
             pScore = 0; bScore = 0;
             updateScoreboard();
-            startRound();
-            showScreen('game-screen');
+            syncHighlights();
+            setTimeout(() => { showScreen('game-screen'); startRound(); }, 400);
         }
 
         function startRound() {
@@ -506,6 +544,9 @@
                 return bestScore;
             }
         }
+        
+        // Panggil saat web pertama kali di-load untuk memasang efek glowing awal
+        window.onload = () => syncHighlights();
     </script>
 </body>
 </html>
