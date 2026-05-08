@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minimax Tic Tac Toe Lobby</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            font-family: 'Montserrat', sans-serif;
+            overflow: hidden; /* Mencegah munculnya scrollbar */
+            background-color: #0d0d0d;
+        }
+
+        /* GAME CONTAINER - Full Screen Responsive */
+        .game-window {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            color: #ece5df;
+            /* Background image dihapus karena sekarang pakai tag <video> */
+        }
+
+        /* STYLING UNTUK VIDEO BACKGROUND */
+        #bg-video {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* Ini udah cukup buat bikin video full screen tanpa distorsi */
+    z-index: 0;
+    pointer-events: none;
+}
+
+        /* TOP RIGHT ICONS */
+        .top-right-controls {
+            position: absolute;
+            top: 6%;
+            right: 4%;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            z-index: 10; /* Z-index ini penting biar tombol ada di depan video */
+        }
+
+        .control-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            cursor: pointer;
+            opacity: 0.8;
+            transition: opacity 0.3s;
+        }
+
+        .control-item:hover {
+            opacity: 1;
+        }
+
+        .control-item i {
+            font-size: 20px;
+            margin-bottom: 8px;
+        }
+
+        .control-item span {
+            font-size: 10px;
+            letter-spacing: 1px;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .divider-vertical {
+            width: 1px;
+            height: 40px;
+            background-color: rgba(236, 229, 223, 0.3);
+        }
+
+        /* MAIN CONTENT LEFT */
+        .main-container {
+            position: absolute;
+            top: 50%;
+            left: 8%;
+            transform: translateY(-50%);
+            display: flex;
+            flex-direction: column;
+            gap: 35px;
+            z-index: 10;
+        }
+
+        /* TYPOGRAPHY SECTION */
+        .text-section {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .algoritma {
+            font-size: 18px;
+            letter-spacing: 12px;
+            font-weight: 300;
+            margin-left: 5px;
+        }
+
+        .minimax {
+            font-family: 'Cinzel', serif;
+            font-size: 8vw;
+            max-font-size: 80px;
+            letter-spacing: 15px;
+            font-weight: 400;
+            line-height: 1;
+            margin-left: 5px;
+        }
+        
+        @media (min-width: 1200px) {
+            .minimax {
+                font-size: 80px;
+            }
+        }
+
+        .tic-tac-toe-row {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-top: 5px;
+        }
+
+        .line {
+            height: 1px;
+            width: 80px;
+            background-color: rgba(236, 229, 223, 0.5);
+        }
+
+        .tic-tac-toe {
+            font-size: 16px;
+            letter-spacing: 10px;
+            font-weight: 300;
+        }
+
+        .flower-icon-center {
+            margin: 15px 0 5px 0;
+            width: 24px;
+            height: 24px;
+            opacity: 0.8;
+            margin-left: 60px;
+        }
+
+        .tagline {
+            font-family: 'Playfair Display', serif;
+            font-style: italic;
+            font-size: 20px;
+            letter-spacing: 1px;
+            color: #d1c8c3;
+        }
+
+        /* BUTTONS MENU */
+        .menu-section {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 320px;
+            margin-top: 10px;
+        }
+
+        .menu-btn {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border-radius: 12px;
+            padding: 15px 25px;
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: #ece5df;
+            text-align: left;
+        }
+
+        .menu-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateX(5px);
+        }
+
+        .btn-icon {
+            font-size: 24px;
+            width: 40px;
+            display: flex;
+            justify-content: center;
+            margin-right: 15px;
+            opacity: 0.9;
+        }
+
+        .btn-text-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .btn-title {
+            font-size: 18px;
+            font-weight: 500;
+            letter-spacing: 2px;
+        }
+
+        .btn-desc {
+            font-size: 12px;
+            font-weight: 300;
+            color: #c7bdb7;
+            letter-spacing: 0.5px;
+        }
+
+        /* CORNERS */
+        .bottom-left {
+            position: absolute;
+            bottom: 5%;
+            left: 4%;
+            font-size: 12px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            opacity: 0.8;
+            z-index: 10;
+        }
+
+        .bottom-right {
+            position: absolute;
+            bottom: 5%;
+            right: 4%;
+            font-size: 13px;
+            font-weight: 300;
+            letter-spacing: 1px;
+            opacity: 0.8;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        .flower-svg {
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 1.5;
+        }
+
+        /* Overlay hitam tipis opsional biar teks lebih terbaca di atas video */
+.video-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Menggunakan linear-gradient: kiri gelap (60%), kanan transparan (0%) */
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 40%);
+    z-index: 1;
+}
+
+    </style>
+</head>
+<body>
+
+    <div class="game-window">
+        
+        <video autoplay loop muted playsinline id="bg-video">
+            <source src="Background/bgvid1.mp4" type="video/mp4">
+            Browser kamu tidak mendukung tag video.
+        </video>
+
+        <div class="video-overlay"></div>
+        
+        <div class="top-right-controls">
+            <div class="control-item" onclick="toggleAudio('music')">
+                <i class="fas fa-music"></i>
+                <span>MUSIC<br>ON</span>
+            </div>
+            <div class="divider-vertical"></div>
+            <div class="control-item" onclick="toggleAudio('sound')">
+                <i class="fas fa-volume-up"></i>
+                <span>SOUND<br>ON</span>
+            </div>
+        </div>
+
+        <div class="main-container">
+            <div class="text-section">
+                <div class="algoritma">ALGORITMA</div>
+                <div class="minimax">MINIMAX</div>
+                <div class="tic-tac-toe-row">
+                    <div class="line"></div>
+                    <div class="tic-tac-toe">TIC TAC TOE</div>
+                    <div class="line"></div>
+                </div>
+                
+                <svg class="flower-icon-center flower-svg" viewBox="0 0 24 24">
+                    <path d="M12 12C12 7 8 7 12 12C16 7 12 7 12 12C16 17 12 17 12 12C8 17 12 17 12 12Z" stroke-linejoin="round" stroke-linecap="round"/>
+                    <circle cx="12" cy="12" r="2" fill="currentColor"/>
+                </svg>
+
+                <div class="tagline">Make your move. Victory in a line.</div>
+            </div>
+
+            <div class="menu-section">
+                <button class="menu-btn" onclick="alert('Starting game...')">
+                    <div class="btn-icon"><i class="fas fa-play"></i></div>
+                    <div class="btn-text-wrapper">
+                        <span class="btn-title">PLAY</span>
+                        <span class="btn-desc">Start a new game</span>
+                    </div>
+                </button>
+
+                <button class="menu-btn" onclick="alert('Opening settings...')">
+                    <div class="btn-icon"><i class="fas fa-cog"></i></div>
+                    <div class="btn-text-wrapper">
+                        <span class="btn-title">SETTINGS</span>
+                        <span class="btn-desc">Customize your experience</span>
+                    </div>
+                </button>
+
+                <button class="menu-btn" onclick="alert('Exiting game...')">
+                    <div class="btn-icon"><i class="fas fa-sign-out-alt"></i></div>
+                    <div class="btn-text-wrapper">
+                        <span class="btn-title">EXIT</span>
+                        <span class="btn-desc">Quit the game</span>
+                    </div>
+                </button>
+            </div>
+
+        </div>
+
+        <div class="bottom-left">Ver. 1.0.0</div>
+        <div class="bottom-right">
+            Made by Luffy Studio 
+            <svg width="16" height="16" class="flower-svg" viewBox="0 0 24 24">
+                <path d="M12 12C12 7 8 7 12 12C16 7 12 7 12 12C16 17 12 17 12 12C8 17 12 17 12 12Z" stroke-linejoin="round" stroke-linecap="round"/>
+                <circle cx="12" cy="12" r="2" fill="currentColor"/>
+            </svg>
+        </div>
+
+    </div>
+
+    <script>
+        function toggleAudio(type) {
+            console.log(type + ' toggled');
+        }
+    </script>
+</body>
+</html>
