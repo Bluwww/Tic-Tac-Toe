@@ -16,10 +16,9 @@
         #bg-video {
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             object-fit: cover; z-index: 0; pointer-events: none;
-            transition: filter 0.8s ease-in-out; /* Transisi mulus untuk efek blur */
+            transition: filter 0.8s ease-in-out;
         }
 
-        /* Class untuk efek blur embun kaca */
         .video-blurred {
             filter: blur(6px) brightness(0.7); 
         }
@@ -177,6 +176,21 @@
             </button>
         </div>
 
+        <div id="turn-screen" class="ui-container hidden">
+            <div class="text-section">
+                <div class="minimax" style="font-size: 50px;">INITIATIVE</div>
+                <div class="tagline">Who will make the first move?</div>
+            </div>
+            <div class="btn-horizontal-group" style="margin-top: 20px;">
+                <button class="menu-btn size-btn" onclick="setFirstTurn('Player')"><span class="btn-title">PLAYER</span></button>
+                <button class="menu-btn size-btn" onclick="setFirstTurn('Bot')"><span class="btn-title">BOT</span></button>
+            </div>
+            <button class="menu-btn" style="width: 200px; margin-top: 20px;" onclick="showScreen('difficulty-screen')">
+                <div class="btn-icon"><i class="fas fa-arrow-left"></i></div>
+                <div class="btn-text-wrapper"><span class="btn-title">BACK</span></div>
+            </button>
+        </div>
+
         <div id="game-screen" class="ui-container hidden">
             <div class="gameplay-wrapper">
                 <div class="scoreboard">
@@ -213,24 +227,21 @@
             </div>
         </div>
 
-        <div class="bottom-left">Ver. 1.5.0</div>
+        <div class="bottom-left">Ver. 1.7.0</div>
         <div class="bottom-right">Made by Jeremy, Phillipo, Rendra</div>
     </div>
 
     <script>
         // --- UI NAVIGATION ---
         function showScreen(screenId) {
-            // Sembunyikan semua screen
             document.querySelectorAll('.ui-container').forEach(el => el.classList.add('hidden'));
-            // Tampilkan screen yang diminta
             document.getElementById(screenId).classList.remove('hidden');
 
-            // Logika untuk efek Blur Embun Kaca
             const videoBg = document.getElementById('bg-video');
             if (screenId === 'lobby-screen') {
-                videoBg.classList.remove('video-blurred'); // Video jernih saat di lobby
+                videoBg.classList.remove('video-blurred'); 
             } else {
-                videoBg.classList.add('video-blurred'); // Video ngeblur saat masuk menu lain
+                videoBg.classList.add('video-blurred'); 
             }
         }
 
@@ -239,6 +250,7 @@
         // --- GAME LOGIC STATE ---
         let currentSize = 3;
         let currentDifficulty = 'Hard';
+        let firstTurnChoice = 'Player'; // Pilihan siapa yang jalan duluan
         let winCondition = 3;
         let board = [];
         let pScore = 0;
@@ -253,12 +265,14 @@
 
         function setDifficulty(diff) {
             currentDifficulty = diff;
-            // 3x3 butuh 3 berderet, 5x5 dan 6x6 butuh 4 berderet
             winCondition = currentSize === 3 ? 3 : 4; 
-            
-            // Update Teks Tip Sesuai Syarat Menang
-            document.getElementById('game-tip').innerText = `Tip: Get ${winCondition} in a row to win!`;
+            showScreen('turn-screen'); // Navigasi ke screen pemilihan giliran
+        }
 
+        function setFirstTurn(choice) {
+            firstTurnChoice = choice;
+            document.getElementById('game-tip').innerText = `Tip: Get ${winCondition} in a row to win!`;
+            
             pScore = 0;
             bScore = 0;
             updateScoreboard();
@@ -268,10 +282,19 @@
 
         function startRound() {
             board = Array(currentSize * currentSize).fill(null);
-            isPlayerTurn = true;
             gameActive = true;
-            document.getElementById('round-status').innerText = `Your turn! (${currentDifficulty})`;
+            
+            // Tentukan giliran awal berdasarkan pilihan pemain
+            isPlayerTurn = (firstTurnChoice === 'Player');
+            
             renderBoard();
+
+            if (!isPlayerTurn) {
+                document.getElementById('round-status').innerText = "Bot is thinking...";
+                setTimeout(botMove, getThinkingDelay());
+            } else {
+                document.getElementById('round-status').innerText = `Your turn! (${currentDifficulty})`;
+            }
         }
 
         function renderBoard() {
@@ -298,6 +321,12 @@
             }
         }
 
+        function getThinkingDelay() {
+            if (currentDifficulty === 'Easy') return 1500;
+            if (currentDifficulty === 'Medium') return 800;
+            return 300; // Hard
+        }
+
         function handlePlayerMove(index) {
             if (!gameActive || board[index] || !isPlayerTurn) return;
 
@@ -309,7 +338,7 @@
 
             isPlayerTurn = false;
             document.getElementById('round-status').innerText = "Bot is thinking...";
-            setTimeout(botMove, 600); 
+            setTimeout(botMove, getThinkingDelay()); 
         }
 
         function botMove() {
