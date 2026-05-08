@@ -3,292 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minimax Tic Tac Toe Lobby</title>
+    <title>Minimax Tic Tac Toe</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body, html { width: 100%; height: 100%; font-family: 'Montserrat', sans-serif; overflow: hidden; background-color: #0d0d0d; color: #ece5df; }
 
-        body, html {
-            width: 100%;
-            height: 100%;
-            font-family: 'Montserrat', sans-serif;
-            overflow: hidden; /* Mencegah munculnya scrollbar */
-            background-color: #0d0d0d;
-        }
+        .game-window { position: relative; width: 100vw; height: 100vh; }
 
-        /* GAME CONTAINER - Full Screen Responsive */
-        .game-window {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-            color: #ece5df;
-            /* Background image dihapus karena sekarang pakai tag <video> */
-        }
-
-        /* STYLING UNTUK VIDEO BACKGROUND */
         #bg-video {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    object-fit: cover; /* Ini udah cukup buat bikin video full screen tanpa distorsi */
-    z-index: 0;
-    pointer-events: none;
-}
-
-        /* TOP RIGHT ICONS */
-        .top-right-controls {
-            position: absolute;
-            top: 6%;
-            right: 4%;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            z-index: 10; /* Z-index ini penting biar tombol ada di depan video */
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; z-index: 0; pointer-events: none;
+            transition: filter 0.8s ease-in-out; /* Transisi mulus untuk efek blur */
         }
 
-        .control-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            cursor: pointer;
-            opacity: 0.8;
-            transition: opacity 0.3s;
+        /* Class untuk efek blur embun kaca */
+        .video-blurred {
+            filter: blur(6px) brightness(0.7); 
         }
 
-        .control-item:hover {
-            opacity: 1;
+        .video-overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(to right, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.2) 60%); z-index: 1;
         }
 
-        .control-item i {
-            font-size: 20px;
-            margin-bottom: 8px;
+        .top-right-controls { position: absolute; top: 6%; right: 4%; display: flex; align-items: center; gap: 20px; z-index: 10; }
+        .control-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; opacity: 0.8; transition: 0.3s; }
+        .control-item:hover { opacity: 1; }
+        .control-item i { font-size: 20px; margin-bottom: 8px; }
+        .control-item span { font-size: 10px; letter-spacing: 1px; text-align: center; }
+        .divider-vertical { width: 1px; height: 40px; background-color: rgba(236, 229, 223, 0.3); }
+
+        /* SCREENS & CONTAINERS */
+        .ui-container {
+            position: absolute; top: 50%; left: 8%; transform: translateY(-50%);
+            display: flex; flex-direction: column; gap: 35px; z-index: 10; width: 80%;
+            transition: opacity 0.5s ease;
         }
 
-        .control-item span {
-            font-size: 10px;
-            letter-spacing: 1px;
-            text-align: center;
-            line-height: 1.2;
-        }
+        .hidden { display: none !important; opacity: 0; pointer-events: none; }
 
-        .divider-vertical {
-            width: 1px;
-            height: 40px;
-            background-color: rgba(236, 229, 223, 0.3);
-        }
+        /* TYPOGRAPHY */
+        .text-section { display: flex; flex-direction: column; gap: 10px; }
+        .algoritma { font-size: 18px; letter-spacing: 12px; font-weight: 300; margin-left: 5px; }
+        .minimax { font-family: 'Cinzel', serif; font-size: 80px; letter-spacing: 15px; font-weight: 400; line-height: 1; margin-left: 5px; }
+        .tic-tac-toe-row { display: flex; align-items: center; gap: 15px; margin-top: 5px; }
+        .line { height: 1px; width: 80px; background-color: rgba(236, 229, 223, 0.5); }
+        .tic-tac-toe { font-size: 16px; letter-spacing: 10px; font-weight: 300; }
+        .tagline { font-family: 'Playfair Display', serif; font-style: italic; font-size: 20px; letter-spacing: 1px; color: #d1c8c3; }
 
-        /* MAIN CONTENT LEFT */
-        .main-container {
-            position: absolute;
-            top: 50%;
-            left: 8%;
-            transform: translateY(-50%);
-            display: flex;
-            flex-direction: column;
-            gap: 35px;
-            z-index: 10;
-        }
-
-        /* TYPOGRAPHY SECTION */
-        .text-section {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
-        .algoritma {
-            font-size: 18px;
-            letter-spacing: 12px;
-            font-weight: 300;
-            margin-left: 5px;
-        }
-
-        .minimax {
-            font-family: 'Cinzel', serif;
-            font-size: 8vw;
-            max-font-size: 80px;
-            letter-spacing: 15px;
-            font-weight: 400;
-            line-height: 1;
-            margin-left: 5px;
-        }
-        
-        @media (min-width: 1200px) {
-            .minimax {
-                font-size: 80px;
-            }
-        }
-
-        .tic-tac-toe-row {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            margin-top: 5px;
-        }
-
-        .line {
-            height: 1px;
-            width: 80px;
-            background-color: rgba(236, 229, 223, 0.5);
-        }
-
-        .tic-tac-toe {
-            font-size: 16px;
-            letter-spacing: 10px;
-            font-weight: 300;
-        }
-
-        .flower-icon-center {
-            margin: 15px 0 5px 0;
-            width: 24px;
-            height: 24px;
-            opacity: 0.8;
-            margin-left: 60px;
-        }
-
-        .tagline {
-            font-family: 'Playfair Display', serif;
-            font-style: italic;
-            font-size: 20px;
-            letter-spacing: 1px;
-            color: #d1c8c3;
-        }
-
-        /* BUTTONS MENU */
-        .menu-section {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            width: 320px;
-            margin-top: 10px;
-        }
-
+        /* BUTTONS */
+        .menu-section { display: flex; flex-direction: column; gap: 15px; width: 320px; margin-top: 10px; }
         .menu-btn {
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(8px);
-            -webkit-backdrop-filter: blur(8px);
-            border-radius: 12px;
-            padding: 15px 25px;
-            display: flex;
-            align-items: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            color: #ece5df;
-            text-align: left;
+            background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(8px); border-radius: 12px; padding: 15px 25px;
+            display: flex; align-items: center; cursor: pointer; transition: 0.3s; color: #ece5df; text-align: left;
         }
+        .menu-btn:hover { background: rgba(255, 255, 255, 0.15); transform: translateX(5px); }
+        .btn-icon { font-size: 24px; width: 40px; display: flex; justify-content: center; margin-right: 15px; opacity: 0.9; }
+        .btn-text-wrapper { display: flex; flex-direction: column; gap: 4px; }
+        .btn-title { font-size: 18px; font-weight: 500; letter-spacing: 2px; }
+        .btn-desc { font-size: 12px; font-weight: 300; color: #c7bdb7; letter-spacing: 0.5px; }
 
-        .menu-btn:hover {
-            background: rgba(255, 255, 255, 0.15);
-            transform: translateX(5px);
+        .btn-horizontal-group { display: flex; gap: 15px; flex-wrap: wrap; max-width: 600px; }
+        .size-btn { width: 140px; justify-content: center; text-align: center; }
+
+        /* GAMEPLAY AREA */
+        .gameplay-wrapper { display: flex; align-items: center; gap: 60px; }
+        .scoreboard {
+            background: rgba(0,0,0,0.4); padding: 30px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);
+            backdrop-filter: blur(10px); display: flex; flex-direction: column; gap: 20px; width: 250px;
         }
-
-        .btn-icon {
-            font-size: 24px;
-            width: 40px;
-            display: flex;
-            justify-content: center;
-            margin-right: 15px;
-            opacity: 0.9;
+        .score-item { display: flex; justify-content: space-between; align-items: center; font-size: 18px; letter-spacing: 2px; }
+        .score-number { font-size: 28px; font-family: 'Cinzel', serif; font-weight: 500; }
+        .best-of { text-align: center; font-size: 14px; letter-spacing: 3px; color: #c7bdb7; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
+        
+        .board {
+            display: grid; gap: 8px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px;
+            backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);
         }
-
-        .btn-text-wrapper {
-            display: flex;
-            flex-direction: column;
-            gap: 4px;
+        .cell {
+            background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
+            font-family: 'Cinzel', serif; cursor: pointer; transition: 0.2s; border-radius: 4px;
         }
+        .cell:hover { background: rgba(255,255,255,0.1); }
+        .cell.x { color: #e74c3c; }
+        .cell.o { color: #3498db; }
 
-        .btn-title {
-            font-size: 18px;
-            font-weight: 500;
-            letter-spacing: 2px;
+        /* FOOTER */
+        .bottom-left { position: absolute; bottom: 5%; left: 4%; font-size: 12px; font-weight: 300; letter-spacing: 1px; opacity: 0.8; z-index: 10; }
+        .bottom-right { position: absolute; bottom: 5%; right: 4%; font-size: 13px; font-weight: 300; letter-spacing: 1px; opacity: 0.8; z-index: 10; }
+
+        /* TIPS TEXT */
+        .game-tip {
+            text-align: center; font-size: 12px; color: #a89f98; margin-top: 5px;
+            font-style: italic; letter-spacing: 0.5px; opacity: 0.9;
         }
-
-        .btn-desc {
-            font-size: 12px;
-            font-weight: 300;
-            color: #c7bdb7;
-            letter-spacing: 0.5px;
-        }
-
-        /* CORNERS */
-        .bottom-left {
-            position: absolute;
-            bottom: 5%;
-            left: 4%;
-            font-size: 12px;
-            font-weight: 300;
-            letter-spacing: 1px;
-            opacity: 0.8;
-            z-index: 10;
-        }
-
-        .bottom-right {
-            position: absolute;
-            bottom: 5%;
-            right: 4%;
-            font-size: 13px;
-            font-weight: 300;
-            letter-spacing: 1px;
-            opacity: 0.8;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            z-index: 10;
-        }
-
-        .flower-svg {
-            fill: none;
-            stroke: currentColor;
-            stroke-width: 1.5;
-        }
-
-
-.video-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    /* Menggunakan linear-gradient: kiri gelap (60%), kanan transparan (0%) */
-    background: linear-gradient(to right, rgba(0, 0, 0, 0.6) 0%, rgba(0, 0, 0, 0) 40%);
-    z-index: 1;
-}
 
     </style>
 </head>
 <body>
 
     <div class="game-window">
-        
         <video autoplay loop muted playsinline id="bg-video">
             <source src="Background/bgvidloop.mp4" type="video/mp4">
-            Browser kamu tidak mendukung tag video.
         </video>
-
         <div class="video-overlay"></div>
         
         <div class="top-right-controls">
             <div class="control-item" onclick="toggleAudio('music')">
-                <i class="fas fa-music"></i>
-                <span>MUSIC<br>ON</span>
+                <i class="fas fa-music"></i><span>MUSIC<br>ON</span>
             </div>
             <div class="divider-vertical"></div>
             <div class="control-item" onclick="toggleAudio('sound')">
-                <i class="fas fa-volume-up"></i>
-                <span>SOUND<br>ON</span>
+                <i class="fas fa-volume-up"></i><span>SOUND<br>ON</span>
             </div>
         </div>
 
-        <div class="main-container">
+        <div id="lobby-screen" class="ui-container">
             <div class="text-section">
                 <div class="algoritma">ALGORITMA</div>
                 <div class="minimax">MINIMAX</div>
@@ -297,57 +131,351 @@
                     <div class="tic-tac-toe">TIC TAC TOE</div>
                     <div class="line"></div>
                 </div>
-                
-                <svg class="flower-icon-center flower-svg" viewBox="0 0 24 24">
-                    <path d="M12 12C12 7 8 7 12 12C16 7 12 7 12 12C16 17 12 17 12 12C8 17 12 17 12 12Z" stroke-linejoin="round" stroke-linecap="round"/>
-                    <circle cx="12" cy="12" r="2" fill="currentColor"/>
-                </svg>
-
-                <div class="tagline">Make your move. Victory in a line.</div>
+                <div class="tagline" style="margin-top: 15px;">Make your move. Victory in a line.</div>
             </div>
-
             <div class="menu-section">
-                <button class="menu-btn" onclick="alert('Starting game...')">
+                <button class="menu-btn" onclick="showScreen('size-screen')">
                     <div class="btn-icon"><i class="fas fa-play"></i></div>
-                    <div class="btn-text-wrapper">
-                        <span class="btn-title">PLAY</span>
-                        <span class="btn-desc">Start a new game</span>
-                    </div>
+                    <div class="btn-text-wrapper"><span class="btn-title">PLAY</span><span class="btn-desc">Start a new match</span></div>
                 </button>
-
-                <button class="menu-btn" onclick="alert('Opening settings...')">
+                <button class="menu-btn" onclick="alert('Settings feature coming soon')">
                     <div class="btn-icon"><i class="fas fa-cog"></i></div>
-                    <div class="btn-text-wrapper">
-                        <span class="btn-title">SETTINGS</span>
-                        <span class="btn-desc">Customize your experience</span>
-                    </div>
-                </button>
-
-                <button class="menu-btn" onclick="alert('Exiting game...')">
-                    <div class="btn-icon"><i class="fas fa-sign-out-alt"></i></div>
-                    <div class="btn-text-wrapper">
-                        <span class="btn-title">EXIT</span>
-                        <span class="btn-desc">Quit the game</span>
-                    </div>
+                    <div class="btn-text-wrapper"><span class="btn-title">SETTINGS</span><span class="btn-desc">Customize experience</span></div>
                 </button>
             </div>
-
         </div>
 
-        <div class="bottom-left">Ver. 1.0.0</div>
-        <div class="bottom-right">
-            Made by Luffy Studio 
-            <svg width="16" height="16" class="flower-svg" viewBox="0 0 24 24">
-                <path d="M12 12C12 7 8 7 12 12C16 7 12 7 12 12C16 17 12 17 12 12C8 17 12 17 12 12Z" stroke-linejoin="round" stroke-linecap="round"/>
-                <circle cx="12" cy="12" r="2" fill="currentColor"/>
-            </svg>
+        <div id="size-screen" class="ui-container hidden">
+            <div class="text-section">
+                <div class="minimax" style="font-size: 50px;">BATTLEFIELD</div>
+                <div class="tagline">Select your board size</div>
+            </div>
+            <div class="btn-horizontal-group" style="margin-top: 20px;">
+                <button class="menu-btn size-btn" onclick="chooseSize(3)"><span class="btn-title">3 x 3</span></button>
+                <button class="menu-btn size-btn" onclick="chooseSize(5)"><span class="btn-title">5 x 5</span></button>
+                <button class="menu-btn size-btn" onclick="chooseSize(6)"><span class="btn-title">6 x 6</span></button>
+            </div>
+            <button class="menu-btn" style="width: 200px; margin-top: 20px;" onclick="showScreen('lobby-screen')">
+                <div class="btn-icon"><i class="fas fa-arrow-left"></i></div>
+                <div class="btn-text-wrapper"><span class="btn-title">BACK</span></div>
+            </button>
         </div>
 
+        <div id="difficulty-screen" class="ui-container hidden">
+            <div class="text-section">
+                <div class="minimax" style="font-size: 50px;">CHALLENGE</div>
+                <div class="tagline">Select your opponent level</div>
+            </div>
+            <div class="btn-horizontal-group" style="margin-top: 20px;">
+                <button class="menu-btn size-btn" onclick="setDifficulty('Easy')"><span class="btn-title">EASY</span></button>
+                <button class="menu-btn size-btn" onclick="setDifficulty('Medium')"><span class="btn-title">MEDIUM</span></button>
+                <button class="menu-btn size-btn" onclick="setDifficulty('Hard')"><span class="btn-title">HARD</span></button>
+            </div>
+            <button class="menu-btn" style="width: 200px; margin-top: 20px;" onclick="showScreen('size-screen')">
+                <div class="btn-icon"><i class="fas fa-arrow-left"></i></div>
+                <div class="btn-text-wrapper"><span class="btn-title">BACK</span></div>
+            </button>
+        </div>
+
+        <div id="game-screen" class="ui-container hidden">
+            <div class="gameplay-wrapper">
+                <div class="scoreboard">
+                    <div class="best-of">BEST OF 5 MATCH</div>
+                    <div class="score-item">
+                        <span>PLAYER (X)</span>
+                        <span class="score-number" id="score-player">0</span>
+                    </div>
+                    <div class="score-item">
+                        <span>BOT (O)</span>
+                        <span class="score-number" id="score-bot">0</span>
+                    </div>
+                    <div id="round-status" style="text-align:center; font-size:12px; color:#c7bdb7; margin-top:10px;">Your turn!</div>
+                    <div id="game-tip" class="game-tip">Tip: Get 3 in a row to win!</div> 
+                </div>
+                <div id="board" class="board"></div>
+            </div>
+        </div>
+
+        <div id="result-screen" class="ui-container hidden">
+            <div class="text-section">
+                <div class="algoritma">MATCH OVER</div>
+                <div class="minimax" id="match-winner-text" style="font-size: 60px; color: #e74c3c;">YOU LOSE</div>
+            </div>
+            <div class="menu-section">
+                <button class="menu-btn" onclick="showScreen('size-screen')">
+                    <div class="btn-icon"><i class="fas fa-redo"></i></div>
+                    <div class="btn-text-wrapper"><span class="btn-title">PLAY AGAIN</span></div>
+                </button>
+                <button class="menu-btn" onclick="showScreen('lobby-screen')">
+                    <div class="btn-icon"><i class="fas fa-home"></i></div>
+                    <div class="btn-text-wrapper"><span class="btn-title">MAIN MENU</span></div>
+                </button>
+            </div>
+        </div>
+
+        <div class="bottom-left">Ver. 1.5.0</div>
+        <div class="bottom-right">Made by Jeremy, Phillipo, Rendra</div>
     </div>
 
     <script>
-        function toggleAudio(type) {
-            console.log(type + ' toggled');
+        // --- UI NAVIGATION ---
+        function showScreen(screenId) {
+            // Sembunyikan semua screen
+            document.querySelectorAll('.ui-container').forEach(el => el.classList.add('hidden'));
+            // Tampilkan screen yang diminta
+            document.getElementById(screenId).classList.remove('hidden');
+
+            // Logika untuk efek Blur Embun Kaca
+            const videoBg = document.getElementById('bg-video');
+            if (screenId === 'lobby-screen') {
+                videoBg.classList.remove('video-blurred'); // Video jernih saat di lobby
+            } else {
+                videoBg.classList.add('video-blurred'); // Video ngeblur saat masuk menu lain
+            }
+        }
+
+        function toggleAudio(type) { console.log(type + ' toggled'); }
+
+        // --- GAME LOGIC STATE ---
+        let currentSize = 3;
+        let currentDifficulty = 'Hard';
+        let winCondition = 3;
+        let board = [];
+        let pScore = 0;
+        let bScore = 0;
+        let isPlayerTurn = true;
+        let gameActive = false;
+
+        function chooseSize(size) {
+            currentSize = size;
+            showScreen('difficulty-screen');
+        }
+
+        function setDifficulty(diff) {
+            currentDifficulty = diff;
+            // 3x3 butuh 3 berderet, 5x5 dan 6x6 butuh 4 berderet
+            winCondition = currentSize === 3 ? 3 : 4; 
+            
+            // Update Teks Tip Sesuai Syarat Menang
+            document.getElementById('game-tip').innerText = `Tip: Get ${winCondition} in a row to win!`;
+
+            pScore = 0;
+            bScore = 0;
+            updateScoreboard();
+            startRound();
+            showScreen('game-screen');
+        }
+
+        function startRound() {
+            board = Array(currentSize * currentSize).fill(null);
+            isPlayerTurn = true;
+            gameActive = true;
+            document.getElementById('round-status').innerText = `Your turn! (${currentDifficulty})`;
+            renderBoard();
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            
+            const maxBoardSize = 450; 
+            const cellSize = Math.floor(maxBoardSize / currentSize);
+            const fontSize = Math.floor(cellSize * 0.6);
+
+            boardEl.style.gridTemplateColumns = `repeat(${currentSize}, ${cellSize}px)`;
+            boardEl.style.gridTemplateRows = `repeat(${currentSize}, ${cellSize}px)`;
+
+            for (let i = 0; i < board.length; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.style.fontSize = `${fontSize}px`;
+                if (board[i]) {
+                    cell.innerText = board[i];
+                    cell.classList.add(board[i].toLowerCase());
+                }
+                cell.onclick = () => handlePlayerMove(i);
+                boardEl.appendChild(cell);
+            }
+        }
+
+        function handlePlayerMove(index) {
+            if (!gameActive || board[index] || !isPlayerTurn) return;
+
+            board[index] = 'X';
+            renderBoard();
+            
+            if (checkWin('X')) return endRound('X');
+            if (board.every(cell => cell !== null)) return endRound('DRAW');
+
+            isPlayerTurn = false;
+            document.getElementById('round-status').innerText = "Bot is thinking...";
+            setTimeout(botMove, 600); 
+        }
+
+        function botMove() {
+            if (!gameActive) return;
+            
+            let bestMove;
+            let useTactic = false;
+
+            if (currentDifficulty === 'Easy') {
+                useTactic = false; 
+            } else if (currentDifficulty === 'Medium') {
+                useTactic = Math.random() > 0.5; 
+            } else if (currentDifficulty === 'Hard') {
+                useTactic = true; 
+            }
+
+            if (useTactic) {
+                if (currentSize === 3) {
+                    bestMove = getBestMoveMinimax(); 
+                } else {
+                    bestMove = getHeuristicMove(); 
+                }
+            } else {
+                bestMove = getRandomMove(); 
+            }
+
+            if (bestMove === undefined || bestMove === null) bestMove = getRandomMove();
+
+            board[bestMove] = 'O';
+            renderBoard();
+
+            if (checkWin('O')) return endRound('O');
+            if (board.every(cell => cell !== null)) return endRound('DRAW');
+
+            isPlayerTurn = true;
+            document.getElementById('round-status').innerText = `Your turn! (${currentDifficulty})`;
+        }
+
+        function endRound(winner) {
+            gameActive = false;
+            if (winner === 'X') {
+                pScore++;
+                document.getElementById('round-status').innerText = "You won this round!";
+            } else if (winner === 'O') {
+                bScore++;
+                document.getElementById('round-status').innerText = "Bot won this round!";
+            } else {
+                document.getElementById('round-status').innerText = "Round Draw!";
+            }
+            
+            updateScoreboard();
+
+            if (pScore === 3 || bScore === 3) {
+                setTimeout(() => endMatch(pScore === 3 ? 'PLAYER' : 'BOT'), 1000);
+            } else {
+                setTimeout(startRound, 1500);
+            }
+        }
+
+        function endMatch(winner) {
+            const wintxt = document.getElementById('match-winner-text');
+            if (winner === 'PLAYER') {
+                wintxt.innerText = "YOU WIN!";
+                wintxt.style.color = "#2ecc71";
+            } else {
+                wintxt.innerText = "YOU LOSE";
+                wintxt.style.color = "#e74c3c";
+            }
+            showScreen('result-screen');
+        }
+
+        function updateScoreboard() {
+            document.getElementById('score-player').innerText = pScore;
+            document.getElementById('score-bot').innerText = bScore;
+        }
+
+        function checkWin(player) {
+            const s = currentSize;
+            const w = winCondition;
+            for (let r = 0; r < s; r++) {
+                for (let c = 0; c < s; c++) {
+                    if (c <= s - w && checkDirection(r, c, 0, 1, player, w, s)) return true;
+                    if (r <= s - w && checkDirection(r, c, 1, 0, player, w, s)) return true;
+                    if (r <= s - w && c <= s - w && checkDirection(r, c, 1, 1, player, w, s)) return true;
+                    if (r <= s - w && c >= w - 1 && checkDirection(r, c, 1, -1, player, w, s)) return true;
+                }
+            }
+            return false;
+        }
+
+        function checkDirection(r, c, rDir, cDir, player, winCond, size) {
+            for (let i = 0; i < winCond; i++) {
+                if (board[(r + i * rDir) * size + (c + i * cDir)] !== player) return false;
+            }
+            return true;
+        }
+
+        function getRandomMove() {
+            let available = [];
+            board.forEach((val, idx) => { if (!val) available.push(idx); });
+            return available[Math.floor(Math.random() * available.length)];
+        }
+
+        function getHeuristicMove() {
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === null) {
+                    board[i] = 'O';
+                    if (checkWin('O')) { board[i] = null; return i; }
+                    board[i] = null;
+                }
+            }
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === null) {
+                    board[i] = 'X';
+                    if (checkWin('X')) { board[i] = null; return i; }
+                    board[i] = null;
+                }
+            }
+            return getRandomMove();
+        }
+
+        function getBestMoveMinimax() {
+            let bestScore = -Infinity;
+            let move;
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === null) {
+                    board[i] = 'O';
+                    let score = minimax(board, 0, false);
+                    board[i] = null;
+                    if (score > bestScore) {
+                        bestScore = score;
+                        move = i;
+                    }
+                }
+            }
+            return move;
+        }
+
+        function minimax(newBoard, depth, isMaximizing) {
+            if (checkWin('O')) return 10 - depth;
+            if (checkWin('X')) return depth - 10;
+            if (newBoard.every(cell => cell !== null)) return 0;
+
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (newBoard[i] === null) {
+                        newBoard[i] = 'O';
+                        let score = minimax(newBoard, depth + 1, false);
+                        newBoard[i] = null;
+                        bestScore = Math.max(score, bestScore);
+                    }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (newBoard[i] === null) {
+                        newBoard[i] = 'X';
+                        let score = minimax(newBoard, depth + 1, true);
+                        newBoard[i] = null;
+                        bestScore = Math.min(score, bestScore);
+                    }
+                }
+                return bestScore;
+            }
         }
     </script>
 </body>
