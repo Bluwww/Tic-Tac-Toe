@@ -28,7 +28,7 @@ Untuk memberikan tantangan terbaik, game ini ditenagai oleh **Algoritma Minimax*
 
 ### ✨ Fitur Utama
 - 🧠 **Adaptive AI System:** - **Minimax Algorithm:** Memastikan AI tidak akan pernah kalah di papan standar 3x3.
-  - **Heuristic Evaluation:** AI yang dioptimalkan untuk papan besar (5x5 & 6x6) agar pengambilan keputusan tetap cerdas tanpa membuat *browser freezing*.
+- 🎨 **Heuristic Evaluation:** AI yang dioptimalkan untuk papan besar (5x5 & 6x6) agar pengambilan keputusan tetap cerdas tanpa membuat *browser freezing*.
 - 📐 **Dynamic Battlefield:** Pilih ukuran papan favoritmu: **3x3**, **5x5**, atau **6x6**.
 - 🎚️ **Challenge Levels:** Tiga tingkat kesulitan (Easy, Medium, Hard) untuk menyesuaikan kemampuanmu.
 - 🏆 **Best of 5 Match:** Sistem *scoreboard* otomatis, siapa yang mencapai 3 kemenangan duluan, dia yang menang!
@@ -51,5 +51,7 @@ Project ini murni dibangun menggunakan teknologi Web Native tanpa tambahan *fram
 Karena game ini dibangun menggunakan Web Native, kamu tidak perlu menginstal *engine* atau *compiler* apa pun. Sangat mudah!
 
 1. **Clone repository ini:**
+   ```bash
+   git clone [https://github.com/Bluwww/Tic-Tac-Toe.git](https://github.com/Bluwww/Tic-Tac-Toe.git)
    ```bash
    git clone [https://github.com/Bluwww/Tic-Tac-Toe.git](https://github.com/Bluwww/Tic-Tac-Toe.git)
