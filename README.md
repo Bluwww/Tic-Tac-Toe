@@ -52,7 +52,7 @@ Karena game ini dibangun menggunakan Web Native, kamu tidak perlu menginstal *en
 
 1. **Clone repository ini:**
    ```bash
-   git clone [https://github.com/Bluwww/Tic-Tac-Toe.git](https://github.com/Bluwww/Tic-Tac-Toe.git)
+   git clone https://github.com/Bluwww/Tic-Tac-Toe.git
 
 2. **Mainkan gamenya:**
    Cukup klik dua kali (buka) file main.html menggunakan browser favoritmu (Chrome, Edge, Firefox, Safari, Brave, DLL).
