@@ -425,3 +425,22 @@ body, html {
         height: min(55vw, 85vh) !important;
     }
 }
+
+@media (max-width: 600px) {
+    body {
+        overflow: hidden; /* Biar nggak bisa geser-geser aneh */
+    }
+    
+    .game-window {
+        transform: scale(0.8); /* Mengecilkan seluruh tampilan game jadi 80% */
+        transform-origin: center;
+    }
+
+    /* Jika ada kontainer board, pastikan lebarnya nggak melebihi layar */
+    .board {
+        width: 90vw; 
+        height: 90vw;
+        max-width: 350px;
+        max-height: 350px;
+    }
+}
