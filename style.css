@@ -270,3 +270,158 @@ body, html {
     50%       { box-shadow: 0 0 25px rgba(255,255,255,0.35); }
 }
 .splash-note { font-size: 11px; letter-spacing: 2px; color: #6b6460; }
+
+/* ============================================================
+   RESPONSIVE — SMARTPHONE (lebar ≤ 600px)
+   Strategi:
+   • Layar lobby/menu  : font scale-down, layout tetap vertikal
+   • Layar game        : gameplay-wrapper jadi kolom (scoreboard di atas, board di bawah)
+   • Board             : lebar mengikuti viewport (min(90vw, 90vh) agar tetap kotak)
+   • Splash            : font lebih kecil, gap lebih rapat
+   ============================================================ */
+@media (max-width: 600px) {
+
+    /* ── SPLASH SCREEN ─────────────────────────────────────── */
+    #splash-screen { gap: 24px; }
+
+    .splash-title {
+        font-size: 36px;       /* 72px → 36px */
+        letter-spacing: 8px;
+    }
+    .splash-sub  { font-size: 11px; letter-spacing: 5px; }
+    .splash-btn  { padding: 12px 30px; font-size: 12px; letter-spacing: 3px; }
+    .splash-note { font-size: 10px; }
+
+    /* ── GLOBAL CONTAINER ──────────────────────────────────── */
+    .ui-container {
+        left: 5%;
+        top: 50%;
+        width: 90%;
+        gap: 18px;
+        /* Geser sedikit ke bawah agar tidak tertabrak tombol audio atas */
+        transform: translateY(-45%);
+    }
+
+    /* ── TYPOGRAPHY ────────────────────────────────────────── */
+    .algoritma {
+        font-size: 11px;
+        letter-spacing: 6px;
+    }
+    .minimax {
+        font-size: 38px;       /* 80px → 38px */
+        letter-spacing: 6px;
+    }
+    .tic-tac-toe { font-size: 11px; letter-spacing: 5px; }
+    .line        { width: 40px; }
+    .tagline     { font-size: 14px; }
+
+    /* ── MENU BUTTONS ──────────────────────────────────────── */
+    .menu-section { width: 100%; gap: 10px; }
+    .menu-btn     { padding: 11px 16px; border-radius: 10px; }
+    .btn-icon     { font-size: 18px; width: 30px; margin-right: 10px; }
+    .btn-title    { font-size: 14px; letter-spacing: 1.5px; }
+    .btn-desc     { font-size: 10px; }
+
+    /* Tombol horizontal (size, difficulty, turn) wrap rapi */
+    .btn-horizontal-group { gap: 10px; }
+    .size-btn { width: 90px; padding: 10px 8px; }
+
+    /* ── TOP CONTROLS ──────────────────────────────────────── */
+    .top-right-controls { top: 2%; right: 3%; gap: 12px; }
+    .control-item i     { font-size: 16px; margin-bottom: 4px; }
+    .control-item span  { font-size: 8px; }
+    .divider-vertical   { height: 28px; }
+    #credits-btn        { top: 2%; left: 3%; width: 34px; height: 34px; font-size: 13px; }
+
+    /* ── SETTINGS ──────────────────────────────────────────── */
+    .settings-content {
+        flex-direction: column;  /* dua kolom → satu kolom */
+        gap: 20px;
+        overflow-y: auto;
+        max-height: 70vh;
+    }
+    .settings-column { max-width: 100%; gap: 16px; }
+    .setting-label   { font-size: 11px; letter-spacing: 2px; }
+    .info-box        { padding: 14px; font-size: 11px; }
+    .score-item      { font-size: 13px; letter-spacing: 1px; }
+    .score-number    { font-size: 20px; }
+    .best-of         { font-size: 11px; letter-spacing: 2px; }
+
+    /* ── GAME SCREEN — layout utama ────────────────────────── */
+    .gameplay-wrapper {
+        flex-direction: column;  /* scoreboard di atas, board di bawah */
+        align-items: center;
+        gap: 12px;
+    }
+
+    /* Scoreboard: baris horizontal agar hemat tinggi */
+    .scoreboard {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+        padding: 10px 14px;
+        gap: 8px;
+        align-items: center;
+        justify-content: space-between;
+        border-radius: 10px;
+    }
+    .best-of {
+        width: 100%;
+        border-bottom: none;
+        border-top: 1px solid rgba(255,255,255,0.2);
+        padding-bottom: 0;
+        padding-top: 6px;
+        order: 99;              /* pindah ke bawah dalam flex row */
+        font-size: 10px;
+    }
+    #round-status { font-size: 10px; }
+    .game-tip     { font-size: 10px; }
+
+    /* ── BOARD — tetap kotak, tidak terpotong ───────────────── */
+    /*
+       renderBoard() di script.js meng-hardcode maxBoardSize=450px via style inline.
+       Kita override dengan CSS agar board menyesuaikan lebar layar.
+       min() memastikan board tidak melebihi lebar maupun tinggi yang tersedia.
+    */
+    #board {
+        /*
+          Lebar papan = 88vw, dibatasi max 88vh sisa (setelah scoreboard ~110px)
+          agar tetap kotak sempurna di portrait maupun landscape.
+        */
+        width:  min(88vw, calc(100vh - 170px)) !important;
+        height: min(88vw, calc(100vh - 170px)) !important;
+        padding: 8px;
+        gap: 5px;
+        box-sizing: border-box;
+    }
+
+    /*
+       Cell ukuran mengikuti grid otomatis; kita pastikan
+       font-size tidak terlalu besar (script.js set inline, tapi ini override).
+    */
+    .cell {
+        font-size: clamp(14px, 6vw, 36px) !important;
+        border-radius: 3px;
+    }
+
+    /* ── RESULT SCREEN ─────────────────────────────────────── */
+    #match-winner-text { font-size: 36px !important; }
+}
+
+/* ── Tambahan untuk landscape tipis (tinggi < 450px) ───────── */
+@media (max-height: 450px) and (max-width: 900px) {
+    .ui-container { top: 50%; transform: translateY(-50%); gap: 10px; }
+    .minimax      { font-size: 28px; letter-spacing: 4px; }
+    .tagline      { display: none; }  /* sembunyikan tagline agar muat */
+
+    .gameplay-wrapper { flex-direction: row; gap: 16px; align-items: center; }
+    .scoreboard {
+        flex-direction: column;
+        width: 130px; min-width: 130px;
+        padding: 10px;
+    }
+    #board {
+        width:  min(55vw, 85vh) !important;
+        height: min(55vw, 85vh) !important;
+    }
+}

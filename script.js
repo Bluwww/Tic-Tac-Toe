@@ -1,4 +1,131 @@
 // ============================================================
+//  CONFETTI ENGINE — Canvas-based, lightweight celebration FX
+//  Hanya aktif saat player menang (PLAYER wins match).
+//  Auto-cleanup: canvas dihapus setelah animasi selesai.
+// ============================================================
+const ConfettiEngine = (() => {
+    let animId   = null;   // requestAnimationFrame handle
+    let canvas   = null;
+    let ctx      = null;
+    let particles = [];
+
+    // Warna confetti — disesuaikan dengan palet game (cream, merah X, biru O, emas)
+    const COLORS = ['#ece5df', '#e74c3c', '#3498db', '#f1c40f', '#2ecc71', '#d1c8c3', '#ffffff'];
+
+    // Bentuk partikel: 'rect' (kertas confetti) atau 'circle' (percikan cahaya)
+    function createParticle(w, h) {
+        const side = Math.random() < 0.5 ? -1 : 1;   // kiri atau kanan layar
+        return {
+            x:      Math.random() * w,
+            y:      -10 - Math.random() * 120,        // mulai di atas viewport
+            vx:     (Math.random() - 0.5) * 3,        // drift horizontal
+            vy:     2.5 + Math.random() * 3.5,        // jatuh ke bawah
+            rot:    Math.random() * Math.PI * 2,
+            rotV:   (Math.random() - 0.5) * 0.2,      // kecepatan rotasi
+            w:      6 + Math.random() * 8,
+            h:      3 + Math.random() * 5,
+            color:  COLORS[Math.floor(Math.random() * COLORS.length)],
+            alpha:  0.9 + Math.random() * 0.1,
+            shape:  Math.random() < 0.3 ? 'circle' : 'rect',  // 30% lingkaran
+            gravity: 0.06 + Math.random() * 0.04,
+            oscillate: (Math.random() - 0.5) * 0.015, // efek melayang kiri-kanan
+        };
+    }
+
+    function spawn(count) {
+        const w = canvas.width, h = canvas.height;
+        for (let i = 0; i < count; i++) particles.push(createParticle(w, h));
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        const h = canvas.height;
+        let alive = false;
+
+        for (const p of particles) {
+            // Update fisika
+            p.vy  += p.gravity;
+            p.vx  += p.oscillate;
+            p.x   += p.vx;
+            p.y   += p.vy;
+            p.rot += p.rotV;
+
+            // Fade out saat mendekati bawah layar
+            if (p.y > h * 0.75) p.alpha -= 0.012;
+            if (p.alpha <= 0) continue;
+            alive = true;
+
+            ctx.save();
+            ctx.globalAlpha = Math.max(0, p.alpha);
+            ctx.translate(p.x, p.y);
+            ctx.rotate(p.rot);
+            ctx.fillStyle = p.color;
+
+            if (p.shape === 'circle') {
+                ctx.beginPath();
+                ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
+                ctx.fill();
+            } else {
+                // Kertas confetti — dipersempit di sumbu Y untuk efek berputar
+                const scaleY = Math.abs(Math.cos(p.rot));
+                ctx.fillRect(-p.w / 2, -p.h / 2 * scaleY, p.w, p.h * scaleY);
+            }
+            ctx.restore();
+        }
+
+        // Buang partikel yang sudah tidak terlihat
+        particles = particles.filter(p => p.alpha > 0);
+
+        if (alive) {
+            animId = requestAnimationFrame(draw);
+        } else {
+            stop();
+        }
+    }
+
+    return {
+        /**
+         * Jalankan confetti di atas semua layer.
+         * @param {number} [duration=4000] - ms sebelum tidak ada partikel baru
+         */
+        start(duration = 4000) {
+            // Bersihkan sesi sebelumnya jika ada
+            this.stop();
+
+            canvas = document.createElement('canvas');
+            canvas.id = 'confetti-canvas';
+            canvas.style.cssText = [
+                'position:fixed', 'inset:0', 'width:100vw', 'height:100vh',
+                'pointer-events:none',   // tidak menghalangi klik
+                'z-index:99999',
+            ].join(';');
+            document.body.appendChild(canvas);
+
+            ctx            = canvas.getContext('2d');
+            canvas.width   = window.innerWidth;
+            canvas.height  = window.innerHeight;
+            particles      = [];
+
+            // Burst awal — 160 partikel langsung
+            spawn(160);
+
+            // Trickle: tambah partikel secara berkala selama `duration`
+            const trickle = setInterval(() => spawn(18), 220);
+            setTimeout(() => clearInterval(trickle), duration);
+
+            animId = requestAnimationFrame(draw);
+        },
+
+        stop() {
+            if (animId) { cancelAnimationFrame(animId); animId = null; }
+            if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+            canvas = null; ctx = null; particles = [];
+        }
+    };
+})();
+
+// ============================================================
 //  SOUND ENGINE — Web Audio API (tidak butuh file eksternal)
 // ============================================================
 const SoundEngine = (() => {
@@ -305,6 +432,9 @@ function showScreen(screenId) {
     const active = document.querySelector('.ui-container:not(.hidden)');
     if (active && screenId === 'credits-screen') _prevScreen = active.id;
 
+    // Hentikan confetti saat meninggalkan result-screen
+    if (screenId !== 'result-screen') ConfettiEngine.stop();
+
     document.querySelectorAll('.ui-container').forEach(el => el.classList.add('hidden'));
     document.getElementById(screenId).classList.remove('hidden');
 
@@ -530,7 +660,14 @@ function endMatch(winner) {
     const wintxt = document.getElementById('match-winner-text');
     wintxt.innerText   = winner === 'PLAYER' ? "YOU WIN!" : "YOU LOSE";
     wintxt.style.color = winner === 'PLAYER' ? "#2ecc71" : "#e74c3c";
-    if (winner === 'PLAYER') SoundEngine.matchWin(); else SoundEngine.matchLose();
+    if (winner === 'PLAYER') {
+        SoundEngine.matchWin();
+        // Tunda sedikit agar layar result tampil dulu, lalu ledakkan confetti
+        setTimeout(() => ConfettiEngine.start(4500), 300);
+    } else {
+        SoundEngine.matchLose();
+        ConfettiEngine.stop(); // Pastikan tidak ada confetti sisa
+    }
     showScreen('result-screen');
 }
 
