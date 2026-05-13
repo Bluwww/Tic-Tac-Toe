@@ -292,6 +292,7 @@ let firstTurnChoice   = 'Player';
 let currentBlur       = 6;
 let winCondition      = 3;
 let board = [], pScore = 0, bScore = 0, isPlayerTurn = true, gameActive = false;
+let prevBoard = []; // Tracks previous state to trigger animation only on new pieces
 
 // Simpan screen sebelum buka Credits agar tombol Back kembali ke sana
 let _prevScreen = 'lobby-screen';
@@ -416,6 +417,7 @@ function setFirstTurn(choice) {
 // ============================================================
 function startRound() {
     board        = Array(currentSize * currentSize).fill(null);
+    prevBoard    = Array(currentSize * currentSize).fill(null); // Reset snapshot
     gameActive   = true;
     isPlayerTurn = (firstTurnChoice === 'Player');
     renderBoard();
@@ -442,10 +444,18 @@ function renderBoard() {
         if (board[i]) {
             cell.innerText = board[i];
             cell.classList.add(board[i].toLowerCase());
+            // Hanya picu animasi jika pion ini baru saja ditempatkan (tidak ada di prevBoard)
+            if (board[i] !== prevBoard[i]) {
+                cell.classList.add('just-placed');
+                // Hapus class setelah animasi selesai agar tidak loop
+                cell.addEventListener('animationend', () => cell.classList.remove('just-placed'), { once: true });
+            }
         }
         cell.onclick = () => handlePlayerMove(i);
         boardEl.appendChild(cell);
     }
+
+    prevBoard = [...board]; // Simpan snapshot board saat ini
 }
 
 function getThinkingDelay() {
