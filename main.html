@@ -6,141 +6,44 @@
     <title>Minimax Tic Tac Toe</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    
-    <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body, html { width: 100%; height: 100%; font-family: 'Montserrat', sans-serif; overflow: hidden; background-color: #0d0d0d; color: #ece5df; }
-
-        .game-window { position: relative; width: 100vw; height: 100vh; }
-
-        #bg-video {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            object-fit: cover; z-index: 0; pointer-events: none;
-            transition: filter 0.8s ease-in-out;
-        }
-
-        /* Variabel Blur default */
-        :root { --blur-amount: 6px; }
-
-        .video-blurred {
-            filter: blur(var(--blur-amount)) brightness(0.7); 
-        }
-
-        .video-overlay {
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: linear-gradient(to right, rgba(0, 0, 0, 0.7) 0%, rgba(0, 0, 0, 0.2) 60%); z-index: 1;
-        }
-
-        .top-right-controls { position: absolute; top: 6%; right: 4%; display: flex; align-items: center; gap: 20px; z-index: 10; }
-        .control-item { display: flex; flex-direction: column; align-items: center; cursor: pointer; opacity: 0.8; transition: 0.3s; }
-        .control-item:hover { opacity: 1; }
-        .control-item i { font-size: 20px; margin-bottom: 8px; }
-        .control-item span { font-size: 10px; letter-spacing: 1px; text-align: center; }
-        .divider-vertical { width: 1px; height: 40px; background-color: rgba(236, 229, 223, 0.3); }
-
-        /* SCREENS & CONTAINERS */
-        .ui-container {
-            position: absolute; top: 50%; left: 8%; transform: translateY(-50%);
-            display: flex; flex-direction: column; gap: 35px; z-index: 10; width: 80%;
-            transition: opacity 0.5s ease;
-        }
-
-        .hidden { display: none !important; opacity: 0; pointer-events: none; }
-
-        /* TYPOGRAPHY */
-        .text-section { display: flex; flex-direction: column; gap: 10px; }
-        .algoritma { font-size: 18px; letter-spacing: 12px; font-weight: 300; margin-left: 5px; }
-        .minimax { font-family: 'Cinzel', serif; font-size: 80px; letter-spacing: 15px; font-weight: 400; line-height: 1; margin-left: 5px; }
-        .tic-tac-toe-row { display: flex; align-items: center; gap: 15px; margin-top: 5px; }
-        .line { height: 1px; width: 80px; background-color: rgba(236, 229, 223, 0.5); }
-        .tic-tac-toe { font-size: 16px; letter-spacing: 10px; font-weight: 300; }
-        .tagline { font-family: 'Playfair Display', serif; font-style: italic; font-size: 20px; letter-spacing: 1px; color: #d1c8c3; }
-
-        /* BUTTONS */
-        .menu-section { display: flex; flex-direction: column; gap: 15px; width: 320px; margin-top: 10px; }
-        .menu-btn {
-            background: rgba(255, 255, 255, 0.08); border: 1px solid rgba(255, 255, 255, 0.25);
-            backdrop-filter: blur(8px); border-radius: 12px; padding: 15px 25px;
-            display: flex; align-items: center; cursor: pointer; transition: 0.3s; color: #ece5df; text-align: left;
-        }
-        .menu-btn:hover { background: rgba(255, 255, 255, 0.15); transform: translateX(5px); }
-        .btn-icon { font-size: 24px; width: 40px; display: flex; justify-content: center; margin-right: 15px; opacity: 0.9; }
-        .btn-text-wrapper { display: flex; flex-direction: column; gap: 4px; }
-        .btn-title { font-size: 18px; font-weight: 500; letter-spacing: 2px; }
-        .btn-desc { font-size: 12px; font-weight: 300; color: #c7bdb7; letter-spacing: 0.5px; }
-
-        .btn-horizontal-group { display: flex; gap: 15px; flex-wrap: wrap; max-width: 600px; }
-        .size-btn { width: 140px; justify-content: center; text-align: center; }
-
-        /* GLOWING EFFECT SUPER TERANG UNTUK TOMBOL AKTIF */
-        .selected-opt { 
-            border: 2px solid #ffffff !important; 
-            background: rgba(255, 255, 255, 0.25) !important;
-            box-shadow: 0 0 20px rgba(255, 255, 255, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.3) !important;
-            transform: scale(1.05);
-            color: #ffffff !important;
-            text-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
-        }
-
-        /* SETTINGS SPECIFIC */
-        .settings-content { display: flex; gap: 50px; align-items: flex-start; }
-        .settings-column { flex: 1; max-width: 450px; display: flex; flex-direction: column; gap: 25px; }
-        .setting-item { display: flex; flex-direction: column; gap: 10px; }
-        .setting-label { font-size: 14px; letter-spacing: 3px; color: #c7bdb7; font-weight: 500; }
-        .info-box { 
-            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); 
-            padding: 20px; border-radius: 12px; font-size: 13px; line-height: 1.6; color: #d1c8c3;
-        }
-        .info-box b { color: #ece5df; letter-spacing: 1px; }
-
-        /* GAMEPLAY AREA */
-        .gameplay-wrapper { display: flex; align-items: center; gap: 60px; }
-        .scoreboard {
-            background: rgba(0,0,0,0.4); padding: 30px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1);
-            backdrop-filter: blur(10px); display: flex; flex-direction: column; gap: 20px; width: 250px;
-        }
-        .score-item { display: flex; justify-content: space-between; align-items: center; font-size: 18px; letter-spacing: 2px; }
-        .score-number { font-size: 28px; font-family: 'Cinzel', serif; font-weight: 500; }
-        .best-of { text-align: center; font-size: 14px; letter-spacing: 3px; color: #c7bdb7; border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px; }
-        
-        .board {
-            display: grid; gap: 8px; background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px;
-            backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);
-        }
-        .cell {
-            background: rgba(0,0,0,0.5); display: flex; justify-content: center; align-items: center;
-            font-family: 'Cinzel', serif; cursor: pointer; transition: 0.2s; border-radius: 4px;
-        }
-        .cell:hover { background: rgba(255,255,255,0.1); }
-        .cell.x { color: #e74c3c; }
-        .cell.o { color: #3498db; }
-
-        /* FOOTER */
-        .bottom-left { position: absolute; bottom: 5%; left: 4%; font-size: 12px; font-weight: 300; letter-spacing: 1px; opacity: 0.8; z-index: 10; }
-        .bottom-right { position: absolute; bottom: 5%; right: 4%; font-size: 13px; font-weight: 300; letter-spacing: 1px; opacity: 0.8; z-index: 10; }
-
-        .game-tip { text-align: center; font-size: 12px; color: #a89f98; margin-top: 5px; font-style: italic; letter-spacing: 0.5px; opacity: 0.9; }
-
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
+
+    <!-- SPLASH SCREEN -->
+    <div id="splash-screen" onclick="enterGame()">
+        <div class="splash-title">MINIMAX</div>
+        <div class="splash-sub">TIC TAC TOE</div>
+        <div class="splash-btn">CLICK TO ENTER</div>
+        <div class="splash-note">♪ WITH SOUND &amp; MUSIC</div>
+    </div>
 
     <div class="game-window">
         <video autoplay loop muted playsinline id="bg-video">
             <source src="Background/bgvidloop.mp4" type="video/mp4">
         </video>
         <div class="video-overlay"></div>
-        
+
+        <!-- Background Music -->
+        <audio id="bg-music" loop>
+            <source src="artmylife-beach-lo-fi-relax-477166.mp3" type="audio/mpeg">
+        </audio>
+
+        <!-- CREDITS BUTTON — top-left -->
+        <button id="credits-btn" onclick="openCredits()" title="Credits">i</button>
+
+        <!-- TOP-RIGHT AUDIO TOGGLES -->
         <div class="top-right-controls">
-            <div class="control-item" onclick="toggleAudio('music')">
+            <div class="control-item" id="music-control" onclick="toggleAudio('music')">
                 <i class="fas fa-music"></i><span>MUSIC<br>ON</span>
             </div>
             <div class="divider-vertical"></div>
-            <div class="control-item" onclick="toggleAudio('sound')">
+            <div class="control-item" id="sound-control" onclick="toggleAudio('sound')">
                 <i class="fas fa-volume-up"></i><span>SOUND<br>ON</span>
             </div>
         </div>
 
+        <!-- ═══════════════════════════ LOBBY ═══════════════════════════ -->
         <div id="lobby-screen" class="ui-container">
             <div class="text-section">
                 <div class="algoritma">ALGORITMA</div>
@@ -164,22 +67,22 @@
             </div>
         </div>
 
+        <!-- ═══════════════════════════ SETTINGS ════════════════════════ -->
         <div id="settings-screen" class="ui-container hidden">
             <div class="text-section">
                 <div class="minimax" style="font-size: 50px;">SETTINGS</div>
             </div>
-            
             <div class="settings-content">
+                <!-- LEFT COLUMN -->
                 <div class="settings-column">
                     <div class="setting-item">
                         <span class="setting-label">BLUR INTENSITY</span>
                         <div class="btn-horizontal-group" id="blur-opts">
-                            <button class="menu-btn size-btn" style="width: 100px; padding: 10px;" onclick="setBlur(2)">Low</button>
-                            <button class="menu-btn size-btn" style="width: 100px; padding: 10px;" onclick="setBlur(6)">Medium</button>
-                            <button class="menu-btn size-btn" style="width: 100px; padding: 10px;" onclick="setBlur(12)">High</button>
+                            <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setBlur(2)">Low</button>
+                            <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setBlur(6)">Medium</button>
+                            <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setBlur(12)">High</button>
                         </div>
                     </div>
-                    
                     <div class="setting-item">
                         <span class="setting-label">ABOUT THE ALGORITHM</span>
                         <div class="info-box">
@@ -188,25 +91,31 @@
                         </div>
                     </div>
                 </div>
-
+                <!-- RIGHT COLUMN -->
                 <div class="settings-column">
                     <div class="setting-item">
-                        <span class="setting-label">THE TEAM</span>
-                        <div class="info-box" style="text-align: center;">
-                            <p style="font-size: 16px; margin-bottom: 10px;">Jeremy, Phillipo, Rendra</p>
-                            <button class="menu-btn" style="width: 100%; justify-content: center;" onclick="window.open('https://github.com/Bluwww/Tic-Tac-Toe.git', '_blank')">
-                                <div class="btn-icon"><i class="fab fa-github"></i></div>
-                                <div class="btn-text-wrapper"><span class="btn-title">VISIT GITHUB</span></div>
-                            </button>
+                        <span class="setting-label">AUDIO SETTINGS</span>
+                        <div class="info-box" style="display:flex;flex-direction:column;gap:18px;">
+                            <div class="volume-row">
+                                <label>BGM</label>
+                                <input type="range" id="bgm-slider" min="0" max="100" value="35"
+                                       oninput="AudioManager.setBGM(this.value)">
+                                <span class="vol-value" id="bgm-val">35</span>
+                            </div>
+                            <div class="volume-row">
+                                <label>SFX</label>
+                                <input type="range" id="sfx-slider" min="0" max="100" value="100"
+                                       oninput="AudioManager.setSFX(this.value)">
+                                <span class="vol-value" id="sfx-val">100</span>
+                            </div>
                         </div>
                     </div>
-                    
-                    <div style="margin-top: auto; display: flex; gap: 15px;">
-                        <button class="menu-btn" style="width: 200px;" onclick="resetDefaults()">
+                    <div style="margin-top:auto;display:flex;gap:15px;">
+                        <button class="menu-btn" style="width:200px;" onclick="resetDefaults()">
                             <div class="btn-icon"><i class="fas fa-undo"></i></div>
                             <div class="btn-text-wrapper"><span class="btn-title">DEFAULT</span></div>
                         </button>
-                        <button class="menu-btn" style="width: 200px;" onclick="showScreen('lobby-screen')">
+                        <button class="menu-btn" style="width:200px;" onclick="showScreen('lobby-screen')">
                             <div class="btn-icon"><i class="fas fa-arrow-left"></i></div>
                             <div class="btn-text-wrapper"><span class="btn-title">BACK</span></div>
                         </button>
@@ -215,53 +124,105 @@
             </div>
         </div>
 
+        <!-- ═══════════════════════════ CREDITS ═════════════════════════ -->
+        <div id="credits-screen" class="ui-container hidden">
+            <div class="text-section">
+                <div class="minimax" style="font-size:50px;">CREDITS</div>
+                <div class="tagline">The minds behind the machine</div>
+            </div>
+            <div class="settings-content">
+                <div class="settings-column">
+                    <div class="setting-item">
+                        <span class="setting-label">THE TEAM</span>
+                        <div class="info-box" style="display:flex;flex-direction:column;gap:16px;">
+                            <div>
+                                <b style="font-size:15px;">Jeremy</b>
+                                <p style="margin-top:4px;color:#c7bdb7;font-size:12px;">5803025027</p>
+                            </div>
+                            <div>
+                                <b style="font-size:15px;">Phillipo</b>
+                                <p style="margin-top:4px;color:#c7bdb7;font-size:12px;">5803025025</p>
+                            </div>
+                            <div>
+                                <b style="font-size:15px;">Rendra</b>
+                                <p style="margin-top:4px;color:#c7bdb7;font-size:12px;">5803025019</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="settings-column">
+                    <div class="setting-item">
+                        <span class="setting-label">REPOSITORY</span>
+                        <div class="info-box" style="display:flex;flex-direction:column;gap:12px;">
+                            <p style="font-size:13px;color:#c7bdb7;line-height:1.6;">Open source project built with vanilla HTML, CSS &amp; JavaScript. No frameworks. No dependencies.</p>
+                            <button class="menu-btn" style="width:100%;justify-content:center;"
+                                    onclick="window.open('https://github.com/Bluwww/Tic-Tac-Toe.git','_blank')">
+                                <div class="btn-icon"><i class="fab fa-github"></i></div>
+                                <div class="btn-text-wrapper"><span class="btn-title">VISIT GITHUB</span></div>
+                            </button>
+                        </div>
+                    </div>
+                    <div style="margin-top:auto;">
+                        <button class="menu-btn" style="width:200px;" onclick="closeCredits()">
+                            <div class="btn-icon"><i class="fas fa-arrow-left"></i></div>
+                            <div class="btn-text-wrapper"><span class="btn-title">BACK</span></div>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════ SIZE ════════════════════════════ -->
         <div id="size-screen" class="ui-container hidden">
             <div class="text-section">
-                <div class="minimax" style="font-size: 50px;">BATTLEFIELD</div>
+                <div class="minimax" style="font-size:50px;">BATTLEFIELD</div>
                 <div class="tagline">Select your board size</div>
             </div>
-            <div class="btn-horizontal-group" id="size-opts" style="margin-top: 20px;">
+            <div class="btn-horizontal-group" id="size-opts" style="margin-top:20px;">
                 <button class="menu-btn size-btn" onclick="chooseSize(3)"><span class="btn-title">3 x 3</span></button>
                 <button class="menu-btn size-btn" onclick="chooseSize(5)"><span class="btn-title">5 x 5</span></button>
                 <button class="menu-btn size-btn" onclick="chooseSize(6)"><span class="btn-title">6 x 6</span></button>
             </div>
-            <button class="menu-btn" style="width: 200px; margin-top: 20px;" onclick="showScreen('lobby-screen')">
+            <button class="menu-btn" style="width:200px;margin-top:20px;" onclick="showScreen('lobby-screen')">
                 <div class="btn-icon"><i class="fas fa-arrow-left"></i></div>
                 <div class="btn-text-wrapper"><span class="btn-title">BACK</span></div>
             </button>
         </div>
 
+        <!-- ═══════════════════════════ DIFFICULTY ═══════════════════════ -->
         <div id="difficulty-screen" class="ui-container hidden">
             <div class="text-section">
-                <div class="minimax" style="font-size: 50px;">CHALLENGE</div>
+                <div class="minimax" style="font-size:50px;">CHALLENGE</div>
                 <div class="tagline">Select your opponent level</div>
             </div>
-            <div class="btn-horizontal-group" id="diff-opts" style="margin-top: 20px;">
+            <div class="btn-horizontal-group" id="diff-opts" style="margin-top:20px;">
                 <button class="menu-btn size-btn" onclick="setDifficulty('Easy')"><span class="btn-title">EASY</span></button>
                 <button class="menu-btn size-btn" onclick="setDifficulty('Medium')"><span class="btn-title">MEDIUM</span></button>
                 <button class="menu-btn size-btn" onclick="setDifficulty('Hard')"><span class="btn-title">HARD</span></button>
             </div>
-            <button class="menu-btn" style="width: 200px; margin-top: 20px;" onclick="showScreen('size-screen')">
+            <button class="menu-btn" style="width:200px;margin-top:20px;" onclick="showScreen('size-screen')">
                 <div class="btn-icon"><i class="fas fa-arrow-left"></i></div>
                 <div class="btn-text-wrapper"><span class="btn-title">BACK</span></div>
             </button>
         </div>
 
+        <!-- ═══════════════════════════ TURN ════════════════════════════ -->
         <div id="turn-screen" class="ui-container hidden">
             <div class="text-section">
-                <div class="minimax" style="font-size: 50px;">INITIATIVE</div>
+                <div class="minimax" style="font-size:50px;">INITIATIVE</div>
                 <div class="tagline">Who will make the first move?</div>
             </div>
-            <div class="btn-horizontal-group" id="turn-opts" style="margin-top: 20px;">
+            <div class="btn-horizontal-group" id="turn-opts" style="margin-top:20px;">
                 <button class="menu-btn size-btn" onclick="setFirstTurn('Player')"><span class="btn-title">PLAYER</span></button>
                 <button class="menu-btn size-btn" onclick="setFirstTurn('Bot')"><span class="btn-title">BOT</span></button>
             </div>
-            <button class="menu-btn" style="width: 200px; margin-top: 20px;" onclick="showScreen('difficulty-screen')">
+            <button class="menu-btn" style="width:200px;margin-top:20px;" onclick="showScreen('difficulty-screen')">
                 <div class="btn-icon"><i class="fas fa-arrow-left"></i></div>
                 <div class="btn-text-wrapper"><span class="btn-title">BACK</span></div>
             </button>
         </div>
 
+        <!-- ═══════════════════════════ GAME ════════════════════════════ -->
         <div id="game-screen" class="ui-container hidden">
             <div class="gameplay-wrapper">
                 <div class="scoreboard">
@@ -274,17 +235,18 @@
                         <span>BOT (O)</span>
                         <span class="score-number" id="score-bot">0</span>
                     </div>
-                    <div id="round-status" style="text-align:center; font-size:12px; color:#c7bdb7; margin-top:10px;">Your turn!</div>
-                    <div id="game-tip" class="game-tip">Tip: Get 3 in a row to win!</div> 
+                    <div id="round-status" style="text-align:center;font-size:12px;color:#c7bdb7;margin-top:10px;">Your turn!</div>
+                    <div id="game-tip" class="game-tip">Tip: Get 3 in a row to win!</div>
                 </div>
                 <div id="board" class="board"></div>
             </div>
         </div>
 
+        <!-- ═══════════════════════════ RESULT ══════════════════════════ -->
         <div id="result-screen" class="ui-container hidden">
             <div class="text-section">
                 <div class="algoritma">MATCH OVER</div>
-                <div class="minimax" id="match-winner-text" style="font-size: 60px; color: #e74c3c;">YOU LOSE</div>
+                <div class="minimax" id="match-winner-text" style="font-size:60px;color:#e74c3c;">YOU LOSE</div>
             </div>
             <div class="menu-section">
                 <button class="menu-btn" onclick="showScreen('size-screen')">
@@ -298,255 +260,10 @@
             </div>
         </div>
 
-        <div class="bottom-left">Ver. 1.8.2</div>
+        <div class="bottom-left">Ver. 1.9.0</div>
         <div class="bottom-right">Made by Jeremy, Phillipo, Rendra</div>
     </div>
 
-    <script>
-        // --- GAME LOGIC STATE ---
-        let currentSize = 3;
-        let currentDifficulty = 'Hard';
-        let firstTurnChoice = 'Player';
-        let currentBlur = 6;
-        let winCondition = 3;
-        let board = [], pScore = 0, bScore = 0, isPlayerTurn = true, gameActive = false;
-
-        // --- UI NAVIGATION & HIGHLIGHT LOGIC ---
-        function showScreen(screenId) {
-            document.querySelectorAll('.ui-container').forEach(el => el.classList.add('hidden'));
-            document.getElementById(screenId).classList.remove('hidden');
-            const videoBg = document.getElementById('bg-video');
-            if (screenId === 'lobby-screen') {
-                videoBg.classList.remove('video-blurred'); 
-            } else {
-                videoBg.classList.add('video-blurred'); 
-            }
-            syncHighlights();
-        }
-
-        function syncHighlights() {
-            // Update Glow untuk Blur
-            document.querySelectorAll('#blur-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
-            if(currentBlur === 2) document.querySelector('#blur-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
-            if(currentBlur === 6) document.querySelector('#blur-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
-            if(currentBlur === 12) document.querySelector('#blur-opts .menu-btn:nth-child(3)').classList.add('selected-opt');
-
-            // Update Glow untuk Ukuran Papan
-            document.querySelectorAll('#size-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
-            if(currentSize === 3) document.querySelector('#size-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
-            if(currentSize === 5) document.querySelector('#size-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
-            if(currentSize === 6) document.querySelector('#size-opts .menu-btn:nth-child(3)').classList.add('selected-opt');
-
-            // Update Glow untuk Difficulty
-            document.querySelectorAll('#diff-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
-            if(currentDifficulty === 'Easy') document.querySelector('#diff-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
-            if(currentDifficulty === 'Medium') document.querySelector('#diff-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
-            if(currentDifficulty === 'Hard') document.querySelector('#diff-opts .menu-btn:nth-child(3)').classList.add('selected-opt');
-
-            // Update Glow untuk First Turn
-            document.querySelectorAll('#turn-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
-            if(firstTurnChoice === 'Player') document.querySelector('#turn-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
-            if(firstTurnChoice === 'Bot') document.querySelector('#turn-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
-        }
-
-        // --- SETTINGS LOGIC ---
-        function setBlur(amount) {
-            currentBlur = amount;
-            document.documentElement.style.setProperty('--blur-amount', amount + 'px');
-            syncHighlights();
-        }
-
-        function resetDefaults() {
-            setBlur(6);
-        }
-
-        function toggleAudio(type) { console.log(type + ' toggled'); }
-
-        function chooseSize(size) {
-            currentSize = size;
-            syncHighlights();
-            setTimeout(() => showScreen('difficulty-screen'), 300);
-        }
-
-        function setDifficulty(diff) {
-            currentDifficulty = diff;
-            winCondition = currentSize === 3 ? 3 : 4; 
-            syncHighlights();
-            setTimeout(() => showScreen('turn-screen'), 300);
-        }
-
-        function setFirstTurn(choice) {
-            firstTurnChoice = choice;
-            document.getElementById('game-tip').innerText = `Tip: Get ${winCondition} in a row to win!`;
-            pScore = 0; bScore = 0;
-            updateScoreboard();
-            syncHighlights();
-            setTimeout(() => { showScreen('game-screen'); startRound(); }, 400);
-        }
-
-        function startRound() {
-            board = Array(currentSize * currentSize).fill(null);
-            gameActive = true;
-            isPlayerTurn = (firstTurnChoice === 'Player');
-            renderBoard();
-            if (!isPlayerTurn) {
-                document.getElementById('round-status').innerText = "Bot is thinking...";
-                setTimeout(botMove, getThinkingDelay());
-            } else {
-                document.getElementById('round-status').innerText = `Your turn! (${currentDifficulty})`;
-            }
-        }
-
-        function renderBoard() {
-            const boardEl = document.getElementById('board');
-            boardEl.innerHTML = '';
-            const maxBoardSize = 450; 
-            const cellSize = Math.floor(maxBoardSize / currentSize);
-            boardEl.style.gridTemplateColumns = `repeat(${currentSize}, ${cellSize}px)`;
-            boardEl.style.gridTemplateRows = `repeat(${currentSize}, ${cellSize}px)`;
-
-            for (let i = 0; i < board.length; i++) {
-                const cell = document.createElement('div');
-                cell.classList.add('cell');
-                cell.style.fontSize = `${Math.floor(cellSize * 0.6)}px`;
-                if (board[i]) {
-                    cell.innerText = board[i];
-                    cell.classList.add(board[i].toLowerCase());
-                }
-                cell.onclick = () => handlePlayerMove(i);
-                boardEl.appendChild(cell);
-            }
-        }
-
-        function getThinkingDelay() {
-            if (currentDifficulty === 'Easy') return 1500;
-            if (currentDifficulty === 'Medium') return 800;
-            return 300;
-        }
-
-        function handlePlayerMove(index) {
-            if (!gameActive || board[index] || !isPlayerTurn) return;
-            board[index] = 'X';
-            renderBoard();
-            if (checkWin('X')) return endRound('X');
-            if (board.every(cell => cell !== null)) return endRound('DRAW');
-            isPlayerTurn = false;
-            document.getElementById('round-status').innerText = "Bot is thinking...";
-            setTimeout(botMove, getThinkingDelay()); 
-        }
-
-        function botMove() {
-            if (!gameActive) return;
-            let bestMove;
-            let useTactic = (currentDifficulty === 'Hard') || (currentDifficulty === 'Medium' && Math.random() > 0.5);
-
-            if (useTactic) {
-                bestMove = (currentSize === 3) ? getBestMoveMinimax() : getHeuristicMove();
-            } else {
-                bestMove = getRandomMove(); 
-            }
-            if (bestMove === undefined || bestMove === null) bestMove = getRandomMove();
-
-            board[bestMove] = 'O';
-            renderBoard();
-            if (checkWin('O')) return endRound('O');
-            if (board.every(cell => cell !== null)) return endRound('DRAW');
-            isPlayerTurn = true;
-            document.getElementById('round-status').innerText = `Your turn! (${currentDifficulty})`;
-        }
-
-        function endRound(winner) {
-            gameActive = false;
-            if (winner === 'X') pScore++; else if (winner === 'O') bScore++;
-            document.getElementById('round-status').innerText = winner === 'DRAW' ? "Round Draw!" : (winner === 'X' ? "You won this round!" : "Bot won this round!");
-            updateScoreboard();
-            if (pScore === 3 || bScore === 3) {
-                setTimeout(() => endMatch(pScore === 3 ? 'PLAYER' : 'BOT'), 1000);
-            } else {
-                setTimeout(startRound, 1500);
-            }
-        }
-
-        function endMatch(winner) {
-            const wintxt = document.getElementById('match-winner-text');
-            wintxt.innerText = winner === 'PLAYER' ? "YOU WIN!" : "YOU LOSE";
-            wintxt.style.color = winner === 'PLAYER' ? "#2ecc71" : "#e74c3c";
-            showScreen('result-screen');
-        }
-
-        function updateScoreboard() {
-            document.getElementById('score-player').innerText = pScore;
-            document.getElementById('score-bot').innerText = bScore;
-        }
-
-        function checkWin(player) {
-            const s = currentSize, w = winCondition;
-            for (let r = 0; r < s; r++) {
-                for (let c = 0; c < s; c++) {
-                    if (c <= s - w && checkDirection(r, c, 0, 1, player, w, s)) return true;
-                    if (r <= s - w && checkDirection(r, c, 1, 0, player, w, s)) return true;
-                    if (r <= s - w && c <= s - w && checkDirection(r, c, 1, 1, player, w, s)) return true;
-                    if (r <= s - w && c >= w - 1 && checkDirection(r, c, 1, -1, player, w, s)) return true;
-                }
-            }
-            return false;
-        }
-
-        function checkDirection(r, c, rDir, cDir, player, winCond, size) {
-            for (let i = 0; i < winCond; i++) {
-                if (board[(r + i * rDir) * size + (c + i * cDir)] !== player) return false;
-            }
-            return true;
-        }
-
-        function getRandomMove() {
-            let available = [];
-            board.forEach((val, idx) => { if (!val) available.push(idx); });
-            return available[Math.floor(Math.random() * available.length)];
-        }
-
-        function getHeuristicMove() {
-            for (let i = 0; i < board.length; i++) {
-                if (board[i] === null) { board[i] = 'O'; if (checkWin('O')) { board[i] = null; return i; } board[i] = null; }
-            }
-            for (let i = 0; i < board.length; i++) {
-                if (board[i] === null) { board[i] = 'X'; if (checkWin('X')) { board[i] = null; return i; } board[i] = null; }
-            }
-            return getRandomMove();
-        }
-
-        function getBestMoveMinimax() {
-            let bestScore = -Infinity, move;
-            for (let i = 0; i < 9; i++) {
-                if (board[i] === null) {
-                    board[i] = 'O'; let score = minimax(board, 0, false); board[i] = null;
-                    if (score > bestScore) { bestScore = score; move = i; }
-                }
-            }
-            return move;
-        }
-
-        function minimax(newBoard, depth, isMaximizing) {
-            if (checkWin('O')) return 10 - depth;
-            if (checkWin('X')) return depth - 10;
-            if (newBoard.every(cell => cell !== null)) return 0;
-            if (isMaximizing) {
-                let bestScore = -Infinity;
-                for (let i = 0; i < 9; i++) {
-                    if (newBoard[i] === null) { newBoard[i] = 'O'; let score = minimax(newBoard, depth + 1, false); newBoard[i] = null; bestScore = Math.max(score, bestScore); }
-                }
-                return bestScore;
-            } else {
-                let bestScore = Infinity;
-                for (let i = 0; i < 9; i++) {
-                    if (newBoard[i] === null) { newBoard[i] = 'X'; let score = minimax(newBoard, depth + 1, true); newBoard[i] = null; bestScore = Math.min(score, bestScore); }
-                }
-                return bestScore;
-            }
-        }
-        
-        // Panggil saat web pertama kali di-load untuk memasang efek glowing awal
-        window.onload = () => syncHighlights();
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
