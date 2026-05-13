@@ -264,6 +264,345 @@
         <div class="bottom-right">Made by Jeremy, Phillipo, Rendra</div>
     </div>
 
+<<<<<<< HEAD
     <script src="script.js"></script>
+=======
+    <script>
+        // --- GAME LOGIC STATE ---
+        let currentSize = 3;
+        let currentDifficulty = 'Hard';
+        let firstTurnChoice = 'Player';
+        let currentBlur = 6;
+        let winCondition = 3;
+        let board = [], pScore = 0, bScore = 0, isPlayerTurn = true, gameActive = false;
+
+        // --- UI NAVIGATION & HIGHLIGHT LOGIC ---
+        function showScreen(screenId) {
+            document.querySelectorAll('.ui-container').forEach(el => el.classList.add('hidden'));
+            document.getElementById(screenId).classList.remove('hidden');
+            const videoBg = document.getElementById('bg-video');
+            if (screenId === 'lobby-screen') {
+                videoBg.classList.remove('video-blurred'); 
+            } else {
+                videoBg.classList.add('video-blurred'); 
+            }
+            syncHighlights();
+        }
+
+        function syncHighlights() {
+            // Update Glow untuk Blur
+            document.querySelectorAll('#blur-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
+            if(currentBlur === 2) document.querySelector('#blur-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
+            if(currentBlur === 6) document.querySelector('#blur-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
+            if(currentBlur === 12) document.querySelector('#blur-opts .menu-btn:nth-child(3)').classList.add('selected-opt');
+
+            // Update Glow untuk Ukuran Papan
+            document.querySelectorAll('#size-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
+            if(currentSize === 3) document.querySelector('#size-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
+            if(currentSize === 5) document.querySelector('#size-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
+            if(currentSize === 6) document.querySelector('#size-opts .menu-btn:nth-child(3)').classList.add('selected-opt');
+
+            // Update Glow untuk Difficulty
+            document.querySelectorAll('#diff-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
+            if(currentDifficulty === 'Easy') document.querySelector('#diff-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
+            if(currentDifficulty === 'Medium') document.querySelector('#diff-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
+            if(currentDifficulty === 'Hard') document.querySelector('#diff-opts .menu-btn:nth-child(3)').classList.add('selected-opt');
+
+            // Update Glow untuk First Turn
+            document.querySelectorAll('#turn-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
+            if(firstTurnChoice === 'Player') document.querySelector('#turn-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
+            if(firstTurnChoice === 'Bot') document.querySelector('#turn-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
+        }
+
+        // --- SETTINGS LOGIC ---
+        function setBlur(amount) {
+            currentBlur = amount;
+            document.documentElement.style.setProperty('--blur-amount', amount + 'px');
+            syncHighlights();
+        }
+
+        function resetDefaults() {
+            setBlur(6);
+        }
+
+        function toggleAudio(type) { console.log(type + ' toggled'); }
+
+        function chooseSize(size) {
+            currentSize = size;
+            syncHighlights();
+            setTimeout(() => showScreen('difficulty-screen'), 300);
+        }
+
+        function setDifficulty(diff) {
+            currentDifficulty = diff;
+            winCondition = currentSize === 3 ? 3 : 4; 
+            syncHighlights();
+            setTimeout(() => showScreen('turn-screen'), 300);
+        }
+
+        function setFirstTurn(choice) {
+            firstTurnChoice = choice;
+            document.getElementById('game-tip').innerText = `Tip: Get ${winCondition} in a row to win!`;
+            pScore = 0; bScore = 0;
+            updateScoreboard();
+            syncHighlights();
+            setTimeout(() => { showScreen('game-screen'); startRound(); }, 400);
+        }
+
+        function startRound() {
+            board = Array(currentSize * currentSize).fill(null);
+            gameActive = true;
+            isPlayerTurn = (firstTurnChoice === 'Player');
+            renderBoard();
+            if (!isPlayerTurn) {
+                document.getElementById('round-status').innerText = "Bot is thinking...";
+                setTimeout(botMove, getThinkingDelay());
+            } else {
+                document.getElementById('round-status').innerText = `Your turn! (${currentDifficulty})`;
+            }
+        }
+
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            const maxBoardSize = 450; 
+            const cellSize = Math.floor(maxBoardSize / currentSize);
+            boardEl.style.gridTemplateColumns = `repeat(${currentSize}, ${cellSize}px)`;
+            boardEl.style.gridTemplateRows = `repeat(${currentSize}, ${cellSize}px)`;
+
+            for (let i = 0; i < board.length; i++) {
+                const cell = document.createElement('div');
+                cell.classList.add('cell');
+                cell.style.fontSize = `${Math.floor(cellSize * 0.6)}px`;
+                if (board[i]) {
+                    cell.innerText = board[i];
+                    cell.classList.add(board[i].toLowerCase());
+                }
+                cell.onclick = () => handlePlayerMove(i);
+                boardEl.appendChild(cell);
+            }
+        }
+
+        function getThinkingDelay() {
+            if (currentDifficulty === 'Easy') return 1500;
+            if (currentDifficulty === 'Medium') return 800;
+            return 300;
+        }
+
+        function handlePlayerMove(index) {
+            if (!gameActive || board[index] || !isPlayerTurn) return;
+            board[index] = 'X';
+            renderBoard();
+            if (checkWin('X')) return endRound('X');
+            if (board.every(cell => cell !== null)) return endRound('DRAW');
+            isPlayerTurn = false;
+            document.getElementById('round-status').innerText = "Bot is thinking...";
+            setTimeout(botMove, getThinkingDelay()); 
+        }
+
+        function botMove() {
+            if (!gameActive) return;
+            let bestMove;
+            
+            // Hard pakai skor Heuristic 100%, Medium pakai 60% waktu, sisanya semi-random
+            let useTactic = (currentDifficulty === 'Hard') || (currentDifficulty === 'Medium' && Math.random() > 0.4);
+
+            if (useTactic) {
+                bestMove = (currentSize === 3) ? getBestMoveMinimax() : getHeuristicMove();
+            } else {
+                // Pada giliran "bodoh" di Medium, bot tetap dipaksa memblokir ancaman 1 langkah akhir
+                if (currentDifficulty === 'Medium') {
+                    for (let i = 0; i < board.length; i++) {
+                        if (board[i] === null) { board[i] = 'X'; if (checkWin('X')) { board[i] = null; bestMove = i; break; } board[i] = null; }
+                    }
+                }
+                if (bestMove === undefined) bestMove = getRandomMove(); 
+            }
+            
+            // Fallback keamanan
+            if (bestMove === undefined || bestMove === null) bestMove = getRandomMove();
+
+            board[bestMove] = 'O';
+            renderBoard();
+            if (checkWin('O')) return endRound('O');
+            if (board.every(cell => cell !== null)) return endRound('DRAW');
+            isPlayerTurn = true;
+            document.getElementById('round-status').innerText = `Your turn! (${currentDifficulty})`;
+        }
+
+        function endRound(winner) {
+            gameActive = false;
+            if (winner === 'X') pScore++; else if (winner === 'O') bScore++;
+            document.getElementById('round-status').innerText = winner === 'DRAW' ? "Round Draw!" : (winner === 'X' ? "You won this round!" : "Bot won this round!");
+            updateScoreboard();
+            if (pScore === 3 || bScore === 3) {
+                setTimeout(() => endMatch(pScore === 3 ? 'PLAYER' : 'BOT'), 1000);
+            } else {
+                setTimeout(startRound, 1500);
+            }
+        }
+
+        function endMatch(winner) {
+            const wintxt = document.getElementById('match-winner-text');
+            wintxt.innerText = winner === 'PLAYER' ? "YOU WIN!" : "YOU LOSE";
+            wintxt.style.color = winner === 'PLAYER' ? "#2ecc71" : "#e74c3c";
+            showScreen('result-screen');
+        }
+
+        function updateScoreboard() {
+            document.getElementById('score-player').innerText = pScore;
+            document.getElementById('score-bot').innerText = bScore;
+        }
+
+        function checkWin(player) {
+            const s = currentSize, w = winCondition;
+            for (let r = 0; r < s; r++) {
+                for (let c = 0; c < s; c++) {
+                    if (c <= s - w && checkDirection(r, c, 0, 1, player, w, s)) return true;
+                    if (r <= s - w && checkDirection(r, c, 1, 0, player, w, s)) return true;
+                    if (r <= s - w && c <= s - w && checkDirection(r, c, 1, 1, player, w, s)) return true;
+                    if (r <= s - w && c >= w - 1 && checkDirection(r, c, 1, -1, player, w, s)) return true;
+                }
+            }
+            return false;
+        }
+
+        function checkDirection(r, c, rDir, cDir, player, winCond, size) {
+            for (let i = 0; i < winCond; i++) {
+                if (board[(r + i * rDir) * size + (c + i * cDir)] !== player) return false;
+            }
+            return true;
+        }
+
+        function getRandomMove() {
+            let available = [];
+            board.forEach((val, idx) => { if (!val) available.push(idx); });
+            return available[Math.floor(Math.random() * available.length)];
+        }
+
+        function getHeuristicMove() {
+            // 1. Cek instan win atau block win (Prioritas Mutlak)
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === null) { board[i] = 'O'; if (checkWin('O')) { board[i] = null; return i; } board[i] = null; }
+            }
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === null) { board[i] = 'X'; if (checkWin('X')) { board[i] = null; return i; } board[i] = null; }
+            }
+
+            // 2. Evaluasi skor posisi untuk langkah terbaik di papan besar (Heuristic Scoring)
+            let bestScore = -Infinity;
+            let bestMoves = [];
+            const center = (currentSize - 1) / 2;
+
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === null) {
+                    // Kombinasi nilai serangan (O) dan nilai pertahanan (X)
+                    let score = evaluateCell(i, 'O') + (evaluateCell(i, 'X') * 0.95); 
+                    
+                    // Bias: Bot sedikit lebih memprioritaskan area tengah papan jika skornya seri
+                    let r = Math.floor(i / currentSize);
+                    let c = i % currentSize;
+                    let distToCenter = Math.abs(r - center) + Math.abs(c - center);
+                    score -= distToCenter * 0.1;
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMoves = [i];
+                    } else if (score === bestScore) {
+                        bestMoves.push(i);
+                    }
+                }
+            }
+
+            // Pilih secara acak jika ada beberapa langkah dengan skor maksimal yang sama
+            if (bestMoves.length > 0) {
+                return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+            }
+            return getRandomMove();
+        }
+
+        // Fungsi baru untuk menilai seberapa bagus menaruh bidak di suatu sel
+        function evaluateCell(index, player) {
+            const s = currentSize;
+            const w = winCondition;
+            let r = Math.floor(index / s);
+            let c = index % s;
+            let score = 0;
+
+            // Arah: Horizontal, Vertikal, Diagonal Kanan, Diagonal Kiri
+            const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
+
+            for (let [rDir, cDir] of dirs) {
+                // Cek semua 'jendela' garis kemenangan yang melewati titik (r, c)
+                for (let offset = 0; offset < w; offset++) {
+                    let startR = r - offset * rDir;
+                    let startC = c - offset * cDir;
+                    let endR = startR + (w - 1) * rDir;
+                    let endC = startC + (w - 1) * cDir;
+
+                    // Pastikan koordinat garis tidak keluar dari batas papan
+                    if (startR >= 0 && startR < s && startC >= 0 && startC < s && 
+                        endR >= 0 && endR < s && endC >= 0 && endC < s) {
+                        
+                        let playerCount = 0;
+                        let blocked = false;
+
+                        for (let i = 0; i < w; i++) {
+                            let cellState = board[(startR + i * rDir) * s + (startC + i * cDir)];
+                            if (cellState === player) {
+                                playerCount++;
+                            } else if (cellState !== null) {
+                                blocked = true;
+                                break; // Jalur ini sudah diblokir lawan
+                            }
+                        }
+
+                        // Berikan poin tinggi jika jalur ini sangat potensial
+                        if (!blocked) {
+                            if (playerCount === w - 1) score += 10000;   // Butuh 1 lagi
+                            else if (playerCount === w - 2) score += 100;  // Butuh 2 lagi
+                            else if (playerCount === w - 3) score += 10;   // Potensi awal garis
+                            else if (playerCount === 0) score += 1;        // Jalur kosong murni
+                        }
+                    }
+                }
+            }
+            return score;
+        }
+
+        function getBestMoveMinimax() {
+            let bestScore = -Infinity, move;
+            for (let i = 0; i < 9; i++) {
+                if (board[i] === null) {
+                    board[i] = 'O'; let score = minimax(board, 0, false); board[i] = null;
+                    if (score > bestScore) { bestScore = score; move = i; }
+                }
+            }
+            return move;
+        }
+
+        function minimax(newBoard, depth, isMaximizing) {
+            if (checkWin('O')) return 10 - depth;
+            if (checkWin('X')) return depth - 10;
+            if (newBoard.every(cell => cell !== null)) return 0;
+            if (isMaximizing) {
+                let bestScore = -Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (newBoard[i] === null) { newBoard[i] = 'O'; let score = minimax(newBoard, depth + 1, false); newBoard[i] = null; bestScore = Math.max(score, bestScore); }
+                }
+                return bestScore;
+            } else {
+                let bestScore = Infinity;
+                for (let i = 0; i < 9; i++) {
+                    if (newBoard[i] === null) { newBoard[i] = 'X'; let score = minimax(newBoard, depth + 1, true); newBoard[i] = null; bestScore = Math.min(score, bestScore); }
+                }
+                return bestScore;
+            }
+        }
+        
+        // Panggil saat web pertama kali di-load untuk memasang efek glowing awal
+        window.onload = () => syncHighlights();
+    </script>
+>>>>>>> 546e03f6e01f9e3338e2fe2de31e28fbbbb75dc7
 </body>
 </html>
