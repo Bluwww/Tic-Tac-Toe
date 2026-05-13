@@ -134,6 +134,20 @@ const SoundEngine = (() => {
 })();
 
 // ============================================================
+//  BGM TRACK LIST
+//  Untuk menambah lagu baru: tambahkan objek baru ke array ini.
+//  - name  : label yang tampil di tombol Settings
+//  - file  : nama file audio (harus ada di folder yang sama dengan main.html)
+// ============================================================
+const TRACKS = [
+    { name: "BEACH LO-FI", file: "artmylife-beach-lo-fi-relax-477166.mp3" },
+    { name: "AVENTURE",    file: "aventure-lofi-chill-nostalgic-469629.mp3" },
+    { name: "PULSEBOX",    file: "pulsebox-lofi-smooth-522876.mp3" },
+];
+
+let currentTrackIndex = 0;
+
+// ============================================================
 //  AUDIO MANAGER — satu sumber global untuk BGM & SFX volume
 // ============================================================
 const AudioManager = (() => {
@@ -226,7 +240,28 @@ const AudioManager = (() => {
             const bv = document.getElementById('bgm-val');    if (bv) bv.textContent = 35;
             const ss = document.getElementById('sfx-slider'); if (ss) ss.value = 100;
             const sv = document.getElementById('sfx-val');    if (sv) sv.textContent = 100;
+            // Reset track ke Track 1
+            if (currentTrackIndex !== 0) this.selectTrack(0, false);
             syncToggleUI();
+        },
+
+        // Ganti BGM track; playSfx=true membunyikan klik menu
+        selectTrack(idx, playSfx = true) {
+            if (idx < 0 || idx >= TRACKS.length) return;
+            currentTrackIndex = idx;
+
+            const wasEnabled = bgmEnabled;
+            bgAudio.pause();
+            bgAudio.src = TRACKS[idx].file;
+            bgAudio.load();
+
+            if (bgStarted && wasEnabled) {
+                bgAudio.volume = bgmVolume / 100;
+                bgAudio.play().catch(() => {});
+            }
+
+            if (playSfx) SoundEngine.menuClick();
+            syncHighlights();
         }
     };
 })();
@@ -315,6 +350,11 @@ function syncHighlights() {
     document.querySelectorAll('#turn-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
     if (firstTurnChoice === 'Player') document.querySelector('#turn-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
     if (firstTurnChoice === 'Bot')    document.querySelector('#turn-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
+
+    // BGM Track selection
+    document.querySelectorAll('#track-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
+    const activeTrackBtn = document.querySelector(`#track-opts .menu-btn:nth-child(${currentTrackIndex + 1})`);
+    if (activeTrackBtn) activeTrackBtn.classList.add('selected-opt');
 }
 
 // ============================================================
@@ -640,4 +680,21 @@ function minimax(newBoard, depth, isMaximizing) {
 // ============================================================
 //  INIT
 // ============================================================
-window.onload = () => syncHighlights();
+window.onload = () => {
+    // Build track selector buttons dynamically from TRACKS array
+    const trackOpts = document.getElementById('track-opts');
+    if (trackOpts) {
+        TRACKS.forEach((track, idx) => {
+            const btn = document.createElement('button');
+            btn.className = 'menu-btn size-btn';
+            btn.style.cssText = 'width:120px; padding:10px; flex-direction:column; gap:4px;';
+            btn.innerHTML = `
+                <span style="font-size:18px;">♪</span>
+                <span class="btn-title" style="font-size:11px; letter-spacing:1.5px;">${track.name}</span>
+            `;
+            btn.onclick = () => AudioManager.selectTrack(idx);
+            trackOpts.appendChild(btn);
+        });
+    }
+    syncHighlights();
+};
