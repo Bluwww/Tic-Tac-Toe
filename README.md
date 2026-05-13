@@ -22,13 +22,15 @@
 
 ## 🌟 Tentang Project Ini
 
-Project ini adalah implementasi modern dari permainan papan klasik **Tic-Tac-Toe** yang dimainkan langsung di web browser. Kami tidak hanya membuat game 3x3 biasa, tetapi juga memperluas arena pertempuran hingga ukuran 6x6! 
+Project ini adalah implementasi modern dari permainan papan klasik **Tic-Tac-Toe** yang dimainkan langsung di web browser. Kami tidak hanya membuat game 3x3 biasa, tetapi juga memperluas arena pertempuran hingga ukuran 6x6!
 
-Untuk memberikan tantangan terbaik, game ini ditenagai oleh **Algoritma Minimax** (untuk permainan sempurna di papan 3x3) dan **Pendekatan Heuristic** (untuk menjaga performa tetap cepat dan menantang di papan yang lebih besar). 
+Untuk memberikan tantangan terbaik, game ini ditenagai oleh **Algoritma Minimax** (untuk permainan sempurna di papan 3x3) dan **Pendekatan Heuristic** (untuk menjaga performa tetap cepat dan menantang di papan yang lebih besar).
 
 ### ✨ Fitur Utama
-- 🧠 **Adaptive AI System:** - **Minimax Algorithm:** Memastikan AI tidak akan pernah kalah di papan standar 3x3.
-- 🎨 **Heuristic Evaluation:** AI yang dioptimalkan untuk papan besar (5x5 & 6x6) agar pengambilan keputusan tetap cerdas tanpa membuat *browser freezing*.
+
+- 🧠 **Adaptive AI System:**
+  - **Minimax Algorithm:** Memastikan AI tidak akan pernah kalah di papan standar 3x3.
+  - **Heuristic Evaluation:** AI yang dioptimalkan untuk papan besar (5x5 & 6x6) agar pengambilan keputusan tetap cerdas tanpa membuat *browser freezing*.
 - 📐 **Dynamic Battlefield:** Pilih ukuran papan favoritmu: **3x3**, **5x5**, atau **6x6**.
 - 🎚️ **Challenge Levels:** Tiga tingkat kesulitan (Easy, Medium, Hard) untuk menyesuaikan kemampuanmu.
 - 🏆 **Best of 5 Match:** Sistem *scoreboard* otomatis, siapa yang mencapai 3 kemenangan duluan, dia yang menang!
@@ -40,9 +42,24 @@ Untuk memberikan tantangan terbaik, game ini ditenagai oleh **Algoritma Minimax*
 
 Project ini murni dibangun menggunakan teknologi Web Native tanpa tambahan *framework* atau *library* eksternal yang berat, memastikan performa maksimal di browser:
 
-- **HTML5** - Struktur utama antarmuka game.
-- **CSS3** - *Styling*, efek *glassmorphism/blur*, animasi transisi, dan *layouting* (Flexbox & Grid).
-- **Vanilla JavaScript (ES6)** - *Core logic* game, algoritma Minimax & Heuristic, DOM manipulation, dan integrasi UI/UX.
+- **HTML5** — Struktur utama antarmuka game.
+- **CSS3** — *Styling*, efek *glassmorphism/blur*, animasi transisi, dan *layouting* (Flexbox & Grid).
+- **Vanilla JavaScript (ES6)** — *Core logic* game, algoritma Minimax & Heuristic, DOM manipulation, dan integrasi UI/UX.
+
+---
+
+## 📁 Struktur File
+
+```
+Tic-Tac-Toe/
+├── main.html     ← Struktur HTML semua layar (lobby, game, settings, credits)
+├── style.css     ← Semua styling, animasi, dan layout
+├── script.js     ← Semua logika: navigasi, AI, audio, game state
+├── README.md     ← Dokumentasi project
+├── Background/
+│   └── bgvidloop.mp4
+└── artmylife-beach-lo-fi-relax-477166.mp3
+```
 
 ---
 
@@ -53,6 +70,17 @@ Karena game ini dibangun menggunakan Web Native, kamu tidak perlu menginstal *en
 1. **Clone repository ini:**
    ```bash
    git clone https://github.com/Bluwww/Tic-Tac-Toe.git
+   ```
 
-2. **Mainkan gamenya:**
-   Cukup klik dua kali (buka) file main.html menggunakan browser favoritmu (Chrome, Edge, Firefox, Safari, Brave, DLL).
+2. **Mainkan gamenya:**  
+   Cukup klik dua kali (buka) file `main.html` menggunakan browser favoritmu (Chrome, Edge, Firefox, Safari, Brave, dll).
+
+---
+
+## 👥 Tim Pengembang
+
+| Nama     | NRP       |
+|----------|------------|
+| Jeremy   | 5803025027 |
+| Phillipo | 5803025025 |
+| Rendra   | 5803025019 |

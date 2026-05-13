@@ -30,8 +30,8 @@ const SoundEngine = (() => {
 
     function playNoise({ gain = 0.15, duration = 0.08, bandpass = null }) {
         if (!soundEnabled) return;
-        const c   = getCtx();
-        const buf = c.createBuffer(1, c.sampleRate * duration, c.sampleRate);
+        const c    = getCtx();
+        const buf  = c.createBuffer(1, c.sampleRate * duration, c.sampleRate);
         const data = buf.getChannelData(0);
         for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
         const src = c.createBufferSource();
@@ -43,7 +43,9 @@ const SoundEngine = (() => {
             const f = c.createBiquadFilter();
             f.type = 'bandpass'; f.frequency.value = bandpass; f.Q.value = 1.5;
             src.connect(f); f.connect(g);
-        } else { src.connect(g); }
+        } else {
+            src.connect(g);
+        }
         g.connect(c.destination);
         src.start(c.currentTime);
     }
@@ -135,12 +137,12 @@ const SoundEngine = (() => {
 //  AUDIO MANAGER — satu sumber global untuk BGM & SFX volume
 // ============================================================
 const AudioManager = (() => {
-    const bgAudio   = document.getElementById('bg-music');
-    let bgmVolume   = 35;   // 0–100
-    let sfxVolume   = 100;  // 0–100
-    let bgmEnabled  = true;
-    let sfxEnabled  = true;
-    let bgStarted   = false;
+    const bgAudio  = document.getElementById('bg-music');
+    let bgmVolume  = 35;   // 0–100
+    let sfxVolume  = 100;  // 0–100
+    let bgmEnabled = true;
+    let sfxEnabled = true;
+    let bgStarted  = false;
 
     function applyBGM() {
         bgAudio.volume = bgmEnabled ? bgmVolume / 100 : 0;
@@ -149,12 +151,12 @@ const AudioManager = (() => {
     function syncToggleUI() {
         const mEl = document.getElementById('music-control');
         if (mEl) {
-            mEl.querySelector('i').className = bgmEnabled ? 'fas fa-music' : 'fas fa-slash';
+            mEl.querySelector('i').className    = bgmEnabled ? 'fas fa-music' : 'fas fa-slash';
             mEl.querySelector('span').innerHTML = bgmEnabled ? 'MUSIC<br>ON' : 'MUSIC<br>OFF';
         }
         const sEl = document.getElementById('sound-control');
         if (sEl) {
-            sEl.querySelector('i').className = sfxEnabled ? 'fas fa-volume-up' : 'fas fa-volume-mute';
+            sEl.querySelector('i').className    = sfxEnabled ? 'fas fa-volume-up' : 'fas fa-volume-mute';
             sEl.querySelector('span').innerHTML = sfxEnabled ? 'SOUND<br>ON' : 'SOUND<br>OFF';
         }
     }
@@ -166,7 +168,6 @@ const AudioManager = (() => {
             }
         },
 
-        // Dipanggil oleh slider BGM di Settings
         setBGM(val) {
             bgmVolume  = parseInt(val);
             bgmEnabled = bgmVolume > 0;
@@ -176,18 +177,15 @@ const AudioManager = (() => {
             syncToggleUI();
         },
 
-        // Dipanggil oleh slider SFX di Settings
         setSFX(val) {
             sfxVolume  = parseInt(val);
             sfxEnabled = sfxVolume > 0;
-            // Sync internal SoundEngine flag agar SFX ikut mute/unmute
             if (sfxEnabled !== SoundEngine.isSoundEnabled()) SoundEngine.toggle();
             const v = document.getElementById('sfx-val');
             if (v) v.textContent = sfxVolume;
             syncToggleUI();
         },
 
-        // Dipanggil toggle button MUSIC di atas
         toggleBGM() {
             bgmEnabled = !bgmEnabled;
             if (bgmEnabled) {
@@ -201,7 +199,6 @@ const AudioManager = (() => {
                 bgAudio.pause();
             }
             applyBGM();
-            // Sync slider
             const s = document.getElementById('bgm-slider');
             if (s) s.value = bgmEnabled ? bgmVolume : 0;
             const v = document.getElementById('bgm-val');
@@ -209,7 +206,6 @@ const AudioManager = (() => {
             return bgmEnabled;
         },
 
-        // Dipanggil toggle button SOUND di atas
         toggleSFX() {
             sfxEnabled = !sfxEnabled;
             sfxVolume  = sfxEnabled ? (sfxVolume === 0 ? 100 : sfxVolume) : 0;
@@ -225,7 +221,7 @@ const AudioManager = (() => {
             bgmVolume = 35; bgmEnabled = true;
             sfxVolume = 100; sfxEnabled = true;
             applyBGM();
-            if (!SoundEngine.isSoundEnabled()) SoundEngine.toggle(); // pastikan SFX ON
+            if (!SoundEngine.isSoundEnabled()) SoundEngine.toggle();
             const bs = document.getElementById('bgm-slider'); if (bs) bs.value = 35;
             const bv = document.getElementById('bgm-val');    if (bv) bv.textContent = 35;
             const ss = document.getElementById('sfx-slider'); if (ss) ss.value = 100;
@@ -270,7 +266,6 @@ let _prevScreen = 'lobby-screen';
 // ============================================================
 function showScreen(screenId) {
     SoundEngine.menuClick();
-    // Catat layar aktif sebelum pindah (untuk Credits back-button)
     const active = document.querySelector('.ui-container:not(.hidden)');
     if (active && screenId === 'credits-screen') _prevScreen = active.id;
 
@@ -298,7 +293,7 @@ function closeCredits() {
 //  HIGHLIGHT / GLOW SYNC
 // ============================================================
 function syncHighlights() {
-    // Blur
+    // Blur intensity
     document.querySelectorAll('#blur-opts .menu-btn').forEach(b => b.classList.remove('selected-opt'));
     if (currentBlur === 2)  document.querySelector('#blur-opts .menu-btn:nth-child(1)').classList.add('selected-opt');
     if (currentBlur === 6)  document.querySelector('#blur-opts .menu-btn:nth-child(2)').classList.add('selected-opt');
@@ -380,7 +375,7 @@ function setFirstTurn(choice) {
 //  GAME LOGIC
 // ============================================================
 function startRound() {
-    board = Array(currentSize * currentSize).fill(null);
+    board        = Array(currentSize * currentSize).fill(null);
     gameActive   = true;
     isPlayerTurn = (firstTurnChoice === 'Player');
     renderBoard();
@@ -396,7 +391,7 @@ function renderBoard() {
     const boardEl = document.getElementById('board');
     boardEl.innerHTML = '';
     const maxBoardSize = 450;
-    const cellSize = Math.floor(maxBoardSize / currentSize);
+    const cellSize     = Math.floor(maxBoardSize / currentSize);
     boardEl.style.gridTemplateColumns = `repeat(${currentSize}, ${cellSize}px)`;
     boardEl.style.gridTemplateRows    = `repeat(${currentSize}, ${cellSize}px)`;
 
@@ -434,13 +429,28 @@ function handlePlayerMove(index) {
 function botMove() {
     if (!gameActive) return;
     let bestMove;
-    let useTactic = (currentDifficulty === 'Hard') || (currentDifficulty === 'Medium' && Math.random() > 0.5);
+    // Hard: always tactical | Medium: 60% tactical, 40% random (but still blocks instant wins)
+    const useTactic = (currentDifficulty === 'Hard') || (currentDifficulty === 'Medium' && Math.random() > 0.4);
+
     if (useTactic) {
         bestMove = (currentSize === 3) ? getBestMoveMinimax() : getHeuristicMove();
     } else {
-        bestMove = getRandomMove();
+        // Medium "dumb" turn: still blocks a 1-move win by player
+        if (currentDifficulty === 'Medium') {
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === null) {
+                    board[i] = 'X';
+                    if (checkWin('X')) { board[i] = null; bestMove = i; break; }
+                    board[i] = null;
+                }
+            }
+        }
+        if (bestMove === undefined) bestMove = getRandomMove();
     }
+
+    // Safety fallback
     if (bestMove === undefined || bestMove === null) bestMove = getRandomMove();
+
     board[bestMove] = 'O';
     SoundEngine.botPlace();
     renderBoard();
@@ -452,12 +462,12 @@ function botMove() {
 
 function endRound(winner) {
     gameActive = false;
-    if (winner === 'X')        { pScore++; SoundEngine.roundWin(); }
-    else if (winner === 'O')   { bScore++; SoundEngine.roundLose(); }
-    else                       { SoundEngine.roundDraw(); }
+    if (winner === 'X')      { pScore++; SoundEngine.roundWin(); }
+    else if (winner === 'O') { bScore++; SoundEngine.roundLose(); }
+    else                     { SoundEngine.roundDraw(); }
     document.getElementById('round-status').innerText =
         winner === 'DRAW' ? "Round Draw!" :
-        (winner === 'X' ? "You won this round!" : "Bot won this round!");
+        (winner === 'X'   ? "You won this round!" : "Bot won this round!");
     updateScoreboard();
     if (pScore === 3 || bScore === 3) {
         setTimeout(() => endMatch(pScore === 3 ? 'PLAYER' : 'BOT'), 1000);
@@ -468,8 +478,8 @@ function endRound(winner) {
 
 function endMatch(winner) {
     const wintxt = document.getElementById('match-winner-text');
-    wintxt.innerText    = winner === 'PLAYER' ? "YOU WIN!" : "YOU LOSE";
-    wintxt.style.color  = winner === 'PLAYER' ? "#2ecc71" : "#e74c3c";
+    wintxt.innerText   = winner === 'PLAYER' ? "YOU WIN!" : "YOU LOSE";
+    wintxt.style.color = winner === 'PLAYER' ? "#2ecc71" : "#e74c3c";
     if (winner === 'PLAYER') SoundEngine.matchWin(); else SoundEngine.matchLose();
     showScreen('result-screen');
 }
@@ -479,6 +489,9 @@ function updateScoreboard() {
     document.getElementById('score-bot').innerText    = bScore;
 }
 
+// ============================================================
+//  WIN DETECTION
+// ============================================================
 function checkWin(player) {
     const s = currentSize, w = winCondition;
     for (let r = 0; r < s; r++) {
@@ -499,22 +512,91 @@ function checkDirection(r, c, rDir, cDir, player, winCond, size) {
     return true;
 }
 
+// ============================================================
+//  AI — RANDOM
+// ============================================================
 function getRandomMove() {
     const available = [];
     board.forEach((val, idx) => { if (!val) available.push(idx); });
     return available[Math.floor(Math.random() * available.length)];
 }
 
+// ============================================================
+//  AI — HEURISTIC (papan 5x5 & 6x6)
+// ============================================================
 function getHeuristicMove() {
+    // 1. Instant win
     for (let i = 0; i < board.length; i++) {
-        if (board[i] === null) { board[i] = 'O'; if (checkWin('O')) { board[i] = null; return i; } board[i] = null; }
+        if (board[i] === null) {
+            board[i] = 'O'; if (checkWin('O')) { board[i] = null; return i; } board[i] = null;
+        }
     }
+    // 2. Block player's instant win
     for (let i = 0; i < board.length; i++) {
-        if (board[i] === null) { board[i] = 'X'; if (checkWin('X')) { board[i] = null; return i; } board[i] = null; }
+        if (board[i] === null) {
+            board[i] = 'X'; if (checkWin('X')) { board[i] = null; return i; } board[i] = null;
+        }
     }
+    // 3. Positional scoring
+    let bestScore = -Infinity;
+    let bestMoves = [];
+    const center  = (currentSize - 1) / 2;
+
+    for (let i = 0; i < board.length; i++) {
+        if (board[i] === null) {
+            const r   = Math.floor(i / currentSize);
+            const c   = i % currentSize;
+            let score = evaluateCell(i, 'O') + (evaluateCell(i, 'X') * 0.95);
+            // Slight center bias to break ties
+            score -= (Math.abs(r - center) + Math.abs(c - center)) * 0.1;
+
+            if (score > bestScore) { bestScore = score; bestMoves = [i]; }
+            else if (score === bestScore) { bestMoves.push(i); }
+        }
+    }
+
+    if (bestMoves.length > 0) return bestMoves[Math.floor(Math.random() * bestMoves.length)];
     return getRandomMove();
 }
 
+// Nilai seberapa bagus menaruh bidak di sel tertentu
+function evaluateCell(index, player) {
+    const s = currentSize, w = winCondition;
+    const r = Math.floor(index / s);
+    const c = index % s;
+    let score = 0;
+    const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
+
+    for (const [rDir, cDir] of dirs) {
+        for (let offset = 0; offset < w; offset++) {
+            const startR = r - offset * rDir;
+            const startC = c - offset * cDir;
+            const endR   = startR + (w - 1) * rDir;
+            const endC   = startC + (w - 1) * cDir;
+
+            if (startR >= 0 && startR < s && startC >= 0 && startC < s &&
+                endR   >= 0 && endR   < s && endC   >= 0 && endC   < s) {
+                let playerCount = 0, blocked = false;
+                for (let i = 0; i < w; i++) {
+                    const cell = board[(startR + i * rDir) * s + (startC + i * cDir)];
+                    if (cell === player)      { playerCount++; }
+                    else if (cell !== null)   { blocked = true; break; }
+                }
+                if (!blocked) {
+                    if      (playerCount === w - 1) score += 10000;  // 1 langkah lagi menang
+                    else if (playerCount === w - 2) score += 100;
+                    else if (playerCount === w - 3) score += 10;
+                    else                            score += 1;
+                }
+            }
+        }
+    }
+    return score;
+}
+
+// ============================================================
+//  AI — MINIMAX (papan 3x3)
+// ============================================================
 function getBestMoveMinimax() {
     let bestScore = -Infinity, move;
     for (let i = 0; i < 9; i++) {
@@ -533,29 +615,29 @@ function minimax(newBoard, depth, isMaximizing) {
     if (checkWin('X')) return depth - 10;
     if (newBoard.every(cell => cell !== null)) return 0;
     if (isMaximizing) {
-        let bestScore = -Infinity;
+        let best = -Infinity;
         for (let i = 0; i < 9; i++) {
             if (newBoard[i] === null) {
                 newBoard[i] = 'O';
-                const score = minimax(newBoard, depth + 1, false);
+                best = Math.max(best, minimax(newBoard, depth + 1, false));
                 newBoard[i] = null;
-                bestScore = Math.max(score, bestScore);
             }
         }
-        return bestScore;
+        return best;
     } else {
-        let bestScore = Infinity;
+        let best = Infinity;
         for (let i = 0; i < 9; i++) {
             if (newBoard[i] === null) {
                 newBoard[i] = 'X';
-                const score = minimax(newBoard, depth + 1, true);
+                best = Math.min(best, minimax(newBoard, depth + 1, true));
                 newBoard[i] = null;
-                bestScore = Math.min(score, bestScore);
             }
         }
-        return bestScore;
+        return best;
     }
 }
 
-// Inisialisasi highlight saat halaman pertama kali dimuat
+// ============================================================
+//  INIT
+// ============================================================
 window.onload = () => syncHighlights();
