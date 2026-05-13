@@ -427,20 +427,34 @@ body, html {
 }
 
 @media (max-width: 600px) {
-    body {
-        overflow: hidden; /* Biar nggak bisa geser-geser aneh */
-    }
-    
-    .game-window {
-        transform: scale(0.8); /* Mengecilkan seluruh tampilan game jadi 80% */
-        transform-origin: center;
+    /* 1. Hilangkan scale biar nggak pecah/blur */
+    .container, .game-window {
+        transform: none !important;
+        width: 100%;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: 10px;
     }
 
-    /* Jika ada kontainer board, pastikan lebarnya nggak melebihi layar */
+    /* 2. Judul/Text dikecilkan sedikit agar muat satu baris */
+    h1, .title {
+        font-size: 8vw !important; /* Ukuran font ikut lebar layar */
+    }
+
+    /* 3. Papan Game Jadi Otomatis (Kuncinya di sini) */
     .board {
-        width: 90vw; 
-        height: 90vw;
+        width: 85vw !important;  /* Lebar papan 85% lebar HP */
+        height: 85vw !important; /* Tinggi sama dengan lebar biar kotak sempurna */
         max-width: 350px;
-        max-height: 351px;
+        max-height: 350px;
+        gap: 5px !important;    /* Kecilkan jarak antar kotak */
+    }
+
+    /* 4. Tombol-tombol agar tidak terlalu besar */
+    button, .menu-btn {
+        width: 70vw !important;
+        padding: 12px !important;
+        font-size: 4vw !important;
     }
 }
