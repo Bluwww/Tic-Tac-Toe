@@ -438,13 +438,23 @@
         function botMove() {
             if (!gameActive) return;
             let bestMove;
-            let useTactic = (currentDifficulty === 'Hard') || (currentDifficulty === 'Medium' && Math.random() > 0.5);
+            
+            // Hard pakai skor Heuristic 100%, Medium pakai 60% waktu, sisanya semi-random
+            let useTactic = (currentDifficulty === 'Hard') || (currentDifficulty === 'Medium' && Math.random() > 0.4);
 
             if (useTactic) {
                 bestMove = (currentSize === 3) ? getBestMoveMinimax() : getHeuristicMove();
             } else {
-                bestMove = getRandomMove(); 
+                // Pada giliran "bodoh" di Medium, bot tetap dipaksa memblokir ancaman 1 langkah akhir
+                if (currentDifficulty === 'Medium') {
+                    for (let i = 0; i < board.length; i++) {
+                        if (board[i] === null) { board[i] = 'X'; if (checkWin('X')) { board[i] = null; bestMove = i; break; } board[i] = null; }
+                    }
+                }
+                if (bestMove === undefined) bestMove = getRandomMove(); 
             }
+            
+            // Fallback keamanan
             if (bestMove === undefined || bestMove === null) bestMove = getRandomMove();
 
             board[bestMove] = 'O';
@@ -506,13 +516,93 @@
         }
 
         function getHeuristicMove() {
+            // 1. Cek instan win atau block win (Prioritas Mutlak)
             for (let i = 0; i < board.length; i++) {
                 if (board[i] === null) { board[i] = 'O'; if (checkWin('O')) { board[i] = null; return i; } board[i] = null; }
             }
             for (let i = 0; i < board.length; i++) {
                 if (board[i] === null) { board[i] = 'X'; if (checkWin('X')) { board[i] = null; return i; } board[i] = null; }
             }
+
+            // 2. Evaluasi skor posisi untuk langkah terbaik di papan besar (Heuristic Scoring)
+            let bestScore = -Infinity;
+            let bestMoves = [];
+            const center = (currentSize - 1) / 2;
+
+            for (let i = 0; i < board.length; i++) {
+                if (board[i] === null) {
+                    // Kombinasi nilai serangan (O) dan nilai pertahanan (X)
+                    let score = evaluateCell(i, 'O') + (evaluateCell(i, 'X') * 0.95); 
+                    
+                    // Bias: Bot sedikit lebih memprioritaskan area tengah papan jika skornya seri
+                    let r = Math.floor(i / currentSize);
+                    let c = i % currentSize;
+                    let distToCenter = Math.abs(r - center) + Math.abs(c - center);
+                    score -= distToCenter * 0.1;
+
+                    if (score > bestScore) {
+                        bestScore = score;
+                        bestMoves = [i];
+                    } else if (score === bestScore) {
+                        bestMoves.push(i);
+                    }
+                }
+            }
+
+            // Pilih secara acak jika ada beberapa langkah dengan skor maksimal yang sama
+            if (bestMoves.length > 0) {
+                return bestMoves[Math.floor(Math.random() * bestMoves.length)];
+            }
             return getRandomMove();
+        }
+
+        // Fungsi baru untuk menilai seberapa bagus menaruh bidak di suatu sel
+        function evaluateCell(index, player) {
+            const s = currentSize;
+            const w = winCondition;
+            let r = Math.floor(index / s);
+            let c = index % s;
+            let score = 0;
+
+            // Arah: Horizontal, Vertikal, Diagonal Kanan, Diagonal Kiri
+            const dirs = [[0, 1], [1, 0], [1, 1], [1, -1]];
+
+            for (let [rDir, cDir] of dirs) {
+                // Cek semua 'jendela' garis kemenangan yang melewati titik (r, c)
+                for (let offset = 0; offset < w; offset++) {
+                    let startR = r - offset * rDir;
+                    let startC = c - offset * cDir;
+                    let endR = startR + (w - 1) * rDir;
+                    let endC = startC + (w - 1) * cDir;
+
+                    // Pastikan koordinat garis tidak keluar dari batas papan
+                    if (startR >= 0 && startR < s && startC >= 0 && startC < s && 
+                        endR >= 0 && endR < s && endC >= 0 && endC < s) {
+                        
+                        let playerCount = 0;
+                        let blocked = false;
+
+                        for (let i = 0; i < w; i++) {
+                            let cellState = board[(startR + i * rDir) * s + (startC + i * cDir)];
+                            if (cellState === player) {
+                                playerCount++;
+                            } else if (cellState !== null) {
+                                blocked = true;
+                                break; // Jalur ini sudah diblokir lawan
+                            }
+                        }
+
+                        // Berikan poin tinggi jika jalur ini sangat potensial
+                        if (!blocked) {
+                            if (playerCount === w - 1) score += 10000;   // Butuh 1 lagi
+                            else if (playerCount === w - 2) score += 100;  // Butuh 2 lagi
+                            else if (playerCount === w - 3) score += 10;   // Potensi awal garis
+                            else if (playerCount === 0) score += 1;        // Jalur kosong murni
+                        }
+                    }
+                }
+            }
+            return score;
         }
 
         function getBestMoveMinimax() {
