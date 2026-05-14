@@ -1,7 +1,6 @@
 /* ============================================================
    WAFFLE SKIN ASSETS (Medium Detail SVGs)
    ============================================================ */
-// Butter dengan sedikit bayangan lelehan di bawahnya
 const BUTTER_ICON = `
 <svg viewBox="0 0 100 100" class="waffle-icon">
     <path d="M 15 70 Q 25 90 50 85 T 85 70 Z" fill="#f4d35e" opacity="0.9"/>
@@ -9,7 +8,6 @@ const BUTTER_ICON = `
     <rect width="50" height="50" x="20" y="20" rx="4" fill="#fdf0b0"/>
 </svg>`;
 
-// Blueberry dengan gradasi dan tambahan daun kecil
 const BLUEBERRY_ICON = `
 <svg viewBox="0 0 100 100" class="waffle-icon">
     <defs>
@@ -24,7 +22,7 @@ const BLUEBERRY_ICON = `
 </svg>`;
 
 // ============================================================
-//  CONFETTI ENGINE — Canvas-based, lightweight celebration FX
+//  CONFETTI ENGINE
 // ============================================================
 const ConfettiEngine = (() => {
   let animId = null;
@@ -561,7 +559,7 @@ const AudioManager = (() => {
       const sv = document.getElementById("sfx-val");
       if (sv) sv.textContent = 100;
       if (currentTrackIndex !== 0) this.selectTrack(0, false);
-      syncToggleUI();
+      syncHighlights();
     },
     selectTrack(idx, playSfx = true) {
       if (idx < 0 || idx >= TRACKS.length) return;
@@ -605,6 +603,7 @@ let firstTurnChoice = "Player";
 let currentBlur = 6;
 let winCondition = 3;
 let currentSkin = "default";
+let previewSize = 3; // Untuk live preview skin
 let board = [],
   pScore = 0,
   bScore = 0,
@@ -708,15 +707,26 @@ function syncHighlights() {
   );
   if (activeTrackBtn) activeTrackBtn.classList.add("selected-opt");
 
-  const skinOpts = document.querySelectorAll("#skin-opts .menu-btn");
+  const skinOpts = document.querySelectorAll("#app-skin-opts .menu-btn");
   if (skinOpts.length > 0) {
     skinOpts.forEach((b) => b.classList.remove("selected-opt"));
     if (currentSkin === "default") skinOpts[0].classList.add("selected-opt");
     if (currentSkin === "neon") skinOpts[1].classList.add("selected-opt");
     if (currentSkin === "waffle") skinOpts[2].classList.add("selected-opt");
   }
+
+  const prevOpts = document.querySelectorAll("#app-size-opts .menu-btn");
+  if (prevOpts.length > 0) {
+    prevOpts.forEach((b) => b.classList.remove("selected-opt"));
+    if (previewSize === 3) prevOpts[0].classList.add("selected-opt");
+    if (previewSize === 5) prevOpts[1].classList.add("selected-opt");
+    if (previewSize === 6) prevOpts[2].classList.add("selected-opt");
+  }
 }
 
+// ============================================================
+//  APPEARANCE SETTINGS & PREVIEW LOGIC
+// ============================================================
 function setBlur(amount) {
   SoundEngine.menuClick();
   currentBlur = amount;
@@ -727,21 +737,74 @@ function setBlur(amount) {
 function setSkin(skin) {
   SoundEngine.menuClick();
   currentSkin = skin;
+
+  // Update main game board if exists
   const boardEl = document.getElementById("board");
   if (boardEl) {
     boardEl.classList.remove("skin-default", "skin-neon", "skin-waffle");
     boardEl.classList.add("skin-" + skin);
   }
+
   syncHighlights();
+  renderPreview(); // Update preview visual
+}
+
+function setPreviewSize(size) {
+  SoundEngine.menuClick();
+  previewSize = size;
+  syncHighlights();
+  renderPreview();
+}
+
+function renderPreview() {
+  const previewEl = document.getElementById("preview-board");
+  if (!previewEl) return;
+
+  previewEl.innerHTML = "";
+  previewEl.className = "board skin-" + currentSkin; // Terapkan skin ke preview
+
+  // Ukuran preview board sedikit lebih kecil dari main board agar pas di menu (320px vs 450px)
+  const maxPreview = 320;
+  const cellSize = Math.floor(maxPreview / previewSize);
+
+  previewEl.style.gridTemplateColumns = `repeat(${previewSize}, ${cellSize}px)`;
+  previewEl.style.gridTemplateRows = `repeat(${previewSize}, ${cellSize}px)`;
+
+  for (let i = 0; i < previewSize * previewSize; i++) {
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.style.fontSize = `${Math.floor(cellSize * 0.6)}px`;
+
+    let piece = null;
+    // Bikin pattern buatan untuk ditunjukkan di preview
+    if (i === 0 || i === previewSize + 2 || i === previewSize * 2 + 1)
+      piece = "X";
+    if (i === 1 || i === previewSize || i === previewSize * 2 + 2) piece = "O";
+
+    if (piece) {
+      if (currentSkin === "waffle") {
+        cell.innerHTML = piece === "X" ? BUTTER_ICON : BLUEBERRY_ICON;
+      } else {
+        cell.innerText = piece;
+      }
+      cell.classList.add(piece.toLowerCase());
+    }
+
+    previewEl.appendChild(cell);
+  }
 }
 
 function resetDefaults() {
   SoundEngine.menuClick();
   setBlur(6);
   setSkin("default");
+  setPreviewSize(3);
   AudioManager.resetDefaults();
 }
 
+// ============================================================
+//  MAIN GAME FLOW
+// ============================================================
 function enterGame() {
   const splash = document.getElementById("splash-screen");
   splash.classList.add("fade-out");
@@ -779,9 +842,6 @@ function setFirstTurn(choice) {
   }, 400);
 }
 
-// ============================================================
-//  GAME LOGIC
-// ============================================================
 function startRound() {
   board = Array(currentSize * currentSize).fill(null);
   prevBoard = Array(currentSize * currentSize).fill(null);
@@ -1133,4 +1193,5 @@ window.onload = () => {
     });
   }
   syncHighlights();
+  renderPreview(); // Render live preview board saat halaman di-load
 };

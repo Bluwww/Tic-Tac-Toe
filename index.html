@@ -62,9 +62,52 @@
                     <div class="btn-icon"><i class="fas fa-cog"></i></div>
                     <div class="btn-text-wrapper">
                         <span class="btn-title">SETTINGS</span>
-                        <span class="btn-desc">Customize experience</span>
+                        <span class="btn-desc">Game system & audio</span>
                     </div>
                 </button>
+                <button class="menu-btn" onclick="showScreen('appearance-screen')">
+                    <div class="btn-icon"><i class="fas fa-palette"></i></div>
+                    <div class="btn-text-wrapper">
+                        <span class="btn-title">APPEARANCE</span>
+                        <span class="btn-desc">Customize visual experience</span>
+                    </div>
+                </button>
+            </div>
+        </div>
+
+        <div id="appearance-screen" class="ui-container hidden">
+            <div class="text-section">
+                <div class="minimax" style="font-size: 50px;">APPEARANCE</div>
+                <div class="tagline">Stylize your battlefield</div>
+            </div>
+            <div class="settings-content" style="align-items: center;">
+                <div class="settings-column">
+                    <div class="setting-item">
+                        <span class="setting-label">BOARD SKIN</span>
+                        <div class="btn-horizontal-group" id="app-skin-opts">
+                            <button class="menu-btn size-btn" style="width:140px;padding:10px;" onclick="setSkin('default')">Classic</button>
+                            <button class="menu-btn size-btn" style="width:140px;padding:10px;" onclick="setSkin('neon')">Cyber Neon</button>
+                            <button class="menu-btn size-btn" style="width:140px;padding:10px;" onclick="setSkin('waffle')">Waffle Break</button>
+                        </div>
+                    </div>
+                    <div class="setting-item" style="margin-top: 15px;">
+                        <span class="setting-label">PREVIEW SIZE</span>
+                        <div class="btn-horizontal-group" id="app-size-opts">
+                            <button class="menu-btn size-btn" style="width:70px;padding:10px;" onclick="setPreviewSize(3)">3x3</button>
+                            <button class="menu-btn size-btn" style="width:70px;padding:10px;" onclick="setPreviewSize(5)">5x5</button>
+                            <button class="menu-btn size-btn" style="width:70px;padding:10px;" onclick="setPreviewSize(6)">6x6</button>
+                        </div>
+                    </div>
+                    <div style="margin-top: 40px;">
+                        <button class="menu-btn" style="width:200px;" onclick="showScreen('lobby-screen')">
+                            <div class="btn-icon"><i class="fas fa-arrow-left"></i></div>
+                            <div class="btn-text-wrapper"><span class="btn-title">BACK</span></div>
+                        </button>
+                    </div>
+                </div>
+                <div class="settings-column" style="display:flex; justify-content:center; align-items:center;">
+                    <div id="preview-board" class="board skin-default"></div>
+                </div>
             </div>
         </div>
 
@@ -82,15 +125,7 @@
                             <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setBlur(12)">High</button>
                         </div>
                     </div>
-                    <div class="setting-item">
-                        <span class="setting-label">BOARD SKIN</span>
-                        <div class="btn-horizontal-group" id="skin-opts">
-                            <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setSkin('default')">Classic</button>
-                            <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setSkin('neon')">Cyber Neon</button>
-                            <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setSkin('waffle')">Waffle Break</button>
-                        </div>
-                    </div>
-                    <div class="setting-item">
+                    <div class="setting-item" style="margin-top:20px;">
                         <span class="setting-label">ABOUT THE ALGORITHM</span>
                         <div class="info-box">
                             <b>MINIMAX:</b> Algoritma rekursif yang mencari langkah optimal dengan meminimalkan kemungkinan kerugian maksimal. Sempurna untuk papan 3x3.<br><br>
