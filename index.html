@@ -10,7 +10,6 @@
 </head>
 <body>
 
-    <!-- SPLASH SCREEN -->
     <div id="splash-screen" onclick="enterGame()">
         <div class="splash-title">MINIMAX</div>
         <div class="splash-sub">TIC TAC TOE</div>
@@ -24,15 +23,12 @@
         </video>
         <div class="video-overlay"></div>
 
-        <!-- Background Music -->
         <audio id="bg-music" loop>
             <source src="artmylife-beach-lo-fi-relax-477166.mp3" type="audio/mpeg">
         </audio>
 
-        <!-- CREDITS BUTTON — top-left -->
         <button id="credits-btn" onclick="openCredits()" title="Credits">i</button>
 
-        <!-- TOP-RIGHT AUDIO TOGGLES -->
         <div class="top-right-controls">
             <div class="control-item" id="music-control" onclick="toggleAudio('music')">
                 <i class="fas fa-music"></i><span>MUSIC<br>ON</span>
@@ -43,7 +39,6 @@
             </div>
         </div>
 
-        <!-- ═══════════════════════════ LOBBY ═══════════════════════════ -->
         <div id="lobby-screen" class="ui-container">
             <div class="text-section">
                 <div class="algoritma">ALGORITMA</div>
@@ -73,13 +68,11 @@
             </div>
         </div>
 
-        <!-- ═══════════════════════════ SETTINGS ════════════════════════ -->
         <div id="settings-screen" class="ui-container hidden">
             <div class="text-section">
                 <div class="minimax" style="font-size: 50px;">SETTINGS</div>
             </div>
             <div class="settings-content">
-                <!-- LEFT COLUMN -->
                 <div class="settings-column">
                     <div class="setting-item">
                         <span class="setting-label">BLUR INTENSITY</span>
@@ -90,6 +83,14 @@
                         </div>
                     </div>
                     <div class="setting-item">
+                        <span class="setting-label">BOARD SKIN</span>
+                        <div class="btn-horizontal-group" id="skin-opts">
+                            <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setSkin('default')">Classic</button>
+                            <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setSkin('neon')">Cyber Neon</button>
+                            <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setSkin('waffle')">Waffle Break</button>
+                        </div>
+                    </div>
+                    <div class="setting-item">
                         <span class="setting-label">ABOUT THE ALGORITHM</span>
                         <div class="info-box">
                             <b>MINIMAX:</b> Algoritma rekursif yang mencari langkah optimal dengan meminimalkan kemungkinan kerugian maksimal. Sempurna untuk papan 3x3.<br><br>
@@ -97,7 +98,6 @@
                         </div>
                     </div>
                 </div>
-                <!-- RIGHT COLUMN -->
                 <div class="settings-column">
                     <div class="setting-item">
                         <span class="setting-label">AUDIO SETTINGS</span>
@@ -119,8 +119,7 @@
                     <div class="setting-item">
                         <span class="setting-label">BGM TRACK</span>
                         <div class="btn-horizontal-group" id="track-opts">
-                            <!-- Track buttons are generated dynamically by script.js -->
-                        </div>
+                            </div>
                     </div>
                     <div style="margin-top:auto;display:flex;gap:15px;">
                         <button class="menu-btn" style="width:200px;" onclick="resetDefaults()">
@@ -136,7 +135,6 @@
             </div>
         </div>
 
-        <!-- ═══════════════════════════ CREDITS ═════════════════════════ -->
         <div id="credits-screen" class="ui-container hidden">
             <div class="text-section">
                 <div class="minimax" style="font-size:50px;">CREDITS</div>
@@ -184,7 +182,6 @@
             </div>
         </div>
 
-        <!-- ═══════════════════════════ SIZE ════════════════════════════ -->
         <div id="size-screen" class="ui-container hidden">
             <div class="text-section">
                 <div class="minimax" style="font-size:50px;">BATTLEFIELD</div>
@@ -201,7 +198,6 @@
             </button>
         </div>
 
-        <!-- ═══════════════════════════ DIFFICULTY ═══════════════════════ -->
         <div id="difficulty-screen" class="ui-container hidden">
             <div class="text-section">
                 <div class="minimax" style="font-size:50px;">CHALLENGE</div>
@@ -218,7 +214,6 @@
             </button>
         </div>
 
-        <!-- ═══════════════════════════ TURN ════════════════════════════ -->
         <div id="turn-screen" class="ui-container hidden">
             <div class="text-section">
                 <div class="minimax" style="font-size:50px;">INITIATIVE</div>
@@ -234,7 +229,6 @@
             </button>
         </div>
 
-        <!-- ═══════════════════════════ GAME ════════════════════════════ -->
         <div id="game-screen" class="ui-container hidden">
             <div class="gameplay-wrapper">
                 <div class="scoreboard">
@@ -254,7 +248,6 @@
             </div>
         </div>
 
-        <!-- ═══════════════════════════ RESULT ══════════════════════════ -->
         <div id="result-screen" class="ui-container hidden">
             <div class="text-section">
                 <div class="algoritma">MATCH OVER</div>

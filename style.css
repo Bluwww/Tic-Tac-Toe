@@ -425,3 +425,69 @@ body, html {
         height: min(55vw, 85vh) !important;
     }
 }
+
+/* ============================================================
+   BOARD SKINS
+   ============================================================ */
+/* Default skin (Glassmorphism Gelap) tidak perlu diubah karena sudah ada di .board dan .cell asli */
+
+/* --- 1. SKIN: CYBER NEON --- */
+.board.skin-neon {
+    background: rgba(10, 10, 35, 0.7);
+    border: 1px solid #00ffff;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.4), inset 0 0 20px rgba(0, 255, 255, 0.2);
+}
+.board.skin-neon .cell {
+    background: rgba(0, 0, 0, 0.8);
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
+}
+.board.skin-neon .cell:hover {
+    background: rgba(0, 255, 255, 0.2);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+}
+.board.skin-neon .cell.x {
+    color: #ff007f;
+    text-shadow: 0 0 15px #ff007f, 0 0 30px #ff007f;
+}
+.board.skin-neon .cell.o {
+    color: #00ffff;
+    text-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff;
+}
+
+/* ============================================================
+   SKIN: WAFFLE BREAK
+   ============================================================ */
+.board.skin-waffle {
+    background: rgba(216, 160, 97, 0.6); /* Warna waffle panggang dengan opasitas cinematic */
+    border: 2px solid #a67c52;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 0 15px rgba(166, 124, 82, 0.4);
+}
+
+.board.skin-waffle .cell {
+    /* Setiap sel adalah satu kotak di grid waffle */
+    background: #f9d8a5; /* Warna adonan lebih terang */
+    border: 1px solid #c78e51; /* Garis pembatas grid */
+    position: relative; /* Penting untuk centering icon */
+}
+
+.board.skin-waffle .cell:hover {
+    background: #ffeac7;
+}
+
+/* Hilangkan text-shadow X/O default untuk skin ini */
+.board.skin-waffle .cell.x,
+.board.skin-waffle .cell.o {
+    text-shadow: none;
+    color: transparent; /* Sembunyikan teks X/O asli jika masih ada */
+}
+
+/* Gaya untuk Icon SVG di dalam sel Waffle */
+.board.skin-waffle .cell svg.waffle-icon {
+    width: 70%; /* Skala icon agar pas di dalam kotak */
+    height: 70%;
+    position: absolute; /* Posisikan di tengah sel */
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
