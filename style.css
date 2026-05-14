@@ -114,7 +114,6 @@ body, html {
 .btn-horizontal-group { display: flex; gap: 15px; flex-wrap: wrap; max-width: 600px; }
 .size-btn { width: 140px; justify-content: center; text-align: center; }
 
-/* Active / selected glow */
 .selected-opt {
     border: 2px solid #ffffff !important;
     background: rgba(255,255,255,0.25) !important;
@@ -141,9 +140,6 @@ body, html {
 }
 .info-box b { color: #ece5df; letter-spacing: 1px; }
 
-/* ============================================================
-   AUDIO VOLUME SLIDERS  (NEW)
-   ============================================================ */
 .volume-row { display: flex; align-items: center; gap: 14px; }
 .volume-row label {
     font-size: 12px; letter-spacing: 2px; color: #c7bdb7; min-width: 40px;
@@ -213,7 +209,6 @@ body, html {
     100% { transform: scale(1)   rotate(0deg);  opacity: 1; }
 }
 
-/* Animasi hanya terpicu saat class 'just-placed' ditambahkan */
 .cell.just-placed {
     animation: pop-in 0.35s cubic-bezier(0.34, 1.56, 0.64, 1) both;
 }
@@ -224,10 +219,6 @@ body, html {
 .bottom-left {
     position: absolute; bottom: 5%; left: 4%;
     font-size: 12px; font-weight: 300; letter-spacing: 1px; opacity: 0.8; z-index: 10;
-}
-.bottom-right {
-    position: absolute; bottom: 5%; right: 4%;
-    font-size: 13px; font-weight: 300; letter-spacing: 1px; opacity: 0.8; z-index: 10;
 }
 .game-tip {
     text-align: center; font-size: 12px; color: #a89f98;
@@ -261,10 +252,7 @@ body, html {
     color: #ece5df; cursor: pointer; transition: 0.3s;
     animation: pulse-glow 2s ease-in-out infinite;
 }
-.splash-btn:hover {
-    background: rgba(255,255,255,0.15);
-    border-color: rgba(255,255,255,0.6);
-}
+.splash-btn:hover { background: rgba(255,255,255,0.15); border-color: rgba(255,255,255,0.6); }
 @keyframes pulse-glow {
     0%, 100% { box-shadow: 0 0 10px rgba(255,255,255,0.1); }
     50%       { box-shadow: 0 0 25px rgba(255,255,255,0.35); }
@@ -273,73 +261,38 @@ body, html {
 
 /* ============================================================
    RESPONSIVE — SMARTPHONE (lebar ≤ 600px)
-   Strategi:
-   • Layar lobby/menu  : font scale-down, layout tetap vertikal
-   • Layar game        : gameplay-wrapper jadi kolom (scoreboard di atas, board di bawah)
-   • Board             : lebar mengikuti viewport (min(90vw, 90vh) agar tetap kotak)
-   • Splash            : font lebih kecil, gap lebih rapat
    ============================================================ */
 @media (max-width: 600px) {
-
-    /* ── SPLASH SCREEN ─────────────────────────────────────── */
     #splash-screen { gap: 24px; }
-
-    .splash-title {
-        font-size: 36px;       /* 72px → 36px */
-        letter-spacing: 8px;
-    }
+    .splash-title { font-size: 36px; letter-spacing: 8px; }
     .splash-sub  { font-size: 11px; letter-spacing: 5px; }
     .splash-btn  { padding: 12px 30px; font-size: 12px; letter-spacing: 3px; }
     .splash-note { font-size: 10px; }
 
-    /* ── GLOBAL CONTAINER ──────────────────────────────────── */
-    .ui-container {
-        left: 5%;
-        top: 50%;
-        width: 90%;
-        gap: 18px;
-        /* Geser sedikit ke bawah agar tidak tertabrak tombol audio atas */
-        transform: translateY(-45%);
-    }
+    .ui-container { left: 5%; top: 50%; width: 90%; gap: 18px; transform: translateY(-45%); }
 
-    /* ── TYPOGRAPHY ────────────────────────────────────────── */
-    .algoritma {
-        font-size: 11px;
-        letter-spacing: 6px;
-    }
-    .minimax {
-        font-size: 38px;       /* 80px → 38px */
-        letter-spacing: 6px;
-    }
+    .algoritma { font-size: 11px; letter-spacing: 6px; }
+    .minimax { font-size: 38px; letter-spacing: 6px; }
     .tic-tac-toe { font-size: 11px; letter-spacing: 5px; }
     .line        { width: 40px; }
     .tagline     { font-size: 14px; }
 
-    /* ── MENU BUTTONS ──────────────────────────────────────── */
     .menu-section { width: 100%; gap: 10px; }
     .menu-btn     { padding: 11px 16px; border-radius: 10px; }
     .btn-icon     { font-size: 18px; width: 30px; margin-right: 10px; }
     .btn-title    { font-size: 14px; letter-spacing: 1.5px; }
     .btn-desc     { font-size: 10px; }
 
-    /* Tombol horizontal (size, difficulty, turn) wrap rapi */
     .btn-horizontal-group { gap: 10px; }
     .size-btn { width: 90px; padding: 10px 8px; }
 
-    /* ── TOP CONTROLS ──────────────────────────────────────── */
     .top-right-controls { top: 2%; right: 3%; gap: 12px; }
     .control-item i     { font-size: 16px; margin-bottom: 4px; }
     .control-item span  { font-size: 8px; }
     .divider-vertical   { height: 28px; }
     #credits-btn        { top: 2%; left: 3%; width: 34px; height: 34px; font-size: 13px; }
 
-    /* ── SETTINGS ──────────────────────────────────────────── */
-    .settings-content {
-        flex-direction: column;  /* dua kolom → satu kolom */
-        gap: 20px;
-        overflow-y: auto;
-        max-height: 70vh;
-    }
+    .settings-content { flex-direction: column; gap: 20px; overflow-y: auto; max-height: 70vh; }
     .settings-column { max-width: 100%; gap: 16px; }
     .setting-label   { font-size: 11px; letter-spacing: 2px; }
     .info-box        { padding: 14px; font-size: 11px; }
@@ -347,146 +300,94 @@ body, html {
     .score-number    { font-size: 20px; }
     .best-of         { font-size: 11px; letter-spacing: 2px; }
 
-    /* ── GAME SCREEN — layout utama ────────────────────────── */
-    .gameplay-wrapper {
-        flex-direction: column;  /* scoreboard di atas, board di bawah */
-        align-items: center;
-        gap: 12px;
-    }
+    .gameplay-wrapper { flex-direction: column; align-items: center; gap: 12px; }
 
-    /* Scoreboard: baris horizontal agar hemat tinggi */
     .scoreboard {
-        width: 100%;
-        flex-direction: row;
-        flex-wrap: wrap;
-        padding: 10px 14px;
-        gap: 8px;
-        align-items: center;
-        justify-content: space-between;
-        border-radius: 10px;
+        width: 100%; flex-direction: row; flex-wrap: wrap; padding: 10px 14px;
+        gap: 8px; align-items: center; justify-content: space-between; border-radius: 10px;
     }
     .best-of {
-        width: 100%;
-        border-bottom: none;
-        border-top: 1px solid rgba(255,255,255,0.2);
-        padding-bottom: 0;
-        padding-top: 6px;
-        order: 99;              /* pindah ke bawah dalam flex row */
-        font-size: 10px;
+        width: 100%; border-bottom: none; border-top: 1px solid rgba(255,255,255,0.2);
+        padding-bottom: 0; padding-top: 6px; order: 99; font-size: 10px;
     }
     #round-status { font-size: 10px; }
     .game-tip     { font-size: 10px; }
 
-    /* ── BOARD — tetap kotak, tidak terpotong ───────────────── */
-    /*
-       renderBoard() di script.js meng-hardcode maxBoardSize=450px via style inline.
-       Kita override dengan CSS agar board menyesuaikan lebar layar.
-       min() memastikan board tidak melebihi lebar maupun tinggi yang tersedia.
-    */
     #board {
-        /*
-          Lebar papan = 88vw, dibatasi max 88vh sisa (setelah scoreboard ~110px)
-          agar tetap kotak sempurna di portrait maupun landscape.
-        */
         width:  min(88vw, calc(100vh - 170px)) !important;
         height: min(88vw, calc(100vh - 170px)) !important;
-        padding: 8px;
-        gap: 5px;
-        box-sizing: border-box;
+        padding: 8px; gap: 5px; box-sizing: border-box;
     }
 
-    /*
-       Cell ukuran mengikuti grid otomatis; kita pastikan
-       font-size tidak terlalu besar (script.js set inline, tapi ini override).
-    */
-    .cell {
-        font-size: clamp(14px, 6vw, 36px) !important;
-        border-radius: 3px;
-    }
+    .cell { font-size: clamp(14px, 6vw, 36px) !important; border-radius: 3px; }
 
-    /* ── RESULT SCREEN ─────────────────────────────────────── */
     #match-winner-text { font-size: 36px !important; }
 }
 
-/* ── Tambahan untuk landscape tipis (tinggi < 450px) ───────── */
 @media (max-height: 450px) and (max-width: 900px) {
     .ui-container { top: 50%; transform: translateY(-50%); gap: 10px; }
     .minimax      { font-size: 28px; letter-spacing: 4px; }
-    .tagline      { display: none; }  /* sembunyikan tagline agar muat */
+    .tagline      { display: none; }
 
     .gameplay-wrapper { flex-direction: row; gap: 16px; align-items: center; }
-    .scoreboard {
-        flex-direction: column;
-        width: 130px; min-width: 130px;
-        padding: 10px;
-    }
-    #board {
-        width:  min(55vw, 85vh) !important;
-        height: min(55vw, 85vh) !important;
-    }
+    .scoreboard { flex-direction: column; width: 130px; min-width: 130px; padding: 10px; }
+    #board { width:  min(55vw, 85vh) !important; height: min(55vw, 85vh) !important; }
 }
 
 /* ============================================================
    BOARD SKINS
    ============================================================ */
-/* Default skin (Glassmorphism Gelap) tidak perlu diubah karena sudah ada di .board dan .cell asli */
 
 /* --- 1. SKIN: CYBER NEON --- */
 .board.skin-neon {
-    background: rgba(10, 10, 35, 0.7);
-    border: 1px solid #00ffff;
+    background: rgba(10, 10, 35, 0.7); border: 1px solid #00ffff;
     box-shadow: 0 0 15px rgba(0, 255, 255, 0.4), inset 0 0 20px rgba(0, 255, 255, 0.2);
 }
 .board.skin-neon .cell {
-    background: rgba(0, 0, 0, 0.8);
-    border: 1px solid rgba(0, 255, 255, 0.3);
+    background: rgba(0, 0, 0, 0.8); border: 1px solid rgba(0, 255, 255, 0.3);
     box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.8);
 }
 .board.skin-neon .cell:hover {
-    background: rgba(0, 255, 255, 0.2);
-    box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
+    background: rgba(0, 255, 255, 0.2); box-shadow: 0 0 15px rgba(0, 255, 255, 0.5);
 }
-.board.skin-neon .cell.x {
-    color: #ff007f;
-    text-shadow: 0 0 15px #ff007f, 0 0 30px #ff007f;
-}
-.board.skin-neon .cell.o {
-    color: #00ffff;
-    text-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff;
-}
+.board.skin-neon .cell.x { color: #ff007f; text-shadow: 0 0 15px #ff007f, 0 0 30px #ff007f; }
+.board.skin-neon .cell.o { color: #00ffff; text-shadow: 0 0 15px #00ffff, 0 0 30px #00ffff; }
 
-/* ============================================================
-   SKIN: WAFFLE BREAK
-   ============================================================ */
+
+/* --- 2. SKIN: WAFFLE BREAK --- */
 .board.skin-waffle {
-    background: rgba(216, 160, 97, 0.6); /* Warna waffle panggang dengan opasitas cinematic */
-    border: 2px solid #a67c52;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), inset 0 0 15px rgba(166, 124, 82, 0.4);
+    background: #d8a061; /* Warna adonan waffle matang */
+    border: 4px solid #b87c3b; /* Tepi waffle */
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4); 
+    position: relative;
 }
 
+/* KOTAK-KOTAK GRID WAFFLE */
 .board.skin-waffle .cell {
-    /* Setiap sel adalah satu kotak di grid waffle */
-    background: #f9d8a5; /* Warna adonan lebih terang */
-    border: 1px solid #c78e51; /* Garis pembatas grid */
-    position: relative; /* Penting untuk centering icon */
+    background: #f9d8a5; 
+    border: 2px solid #c78e51; 
+    border-radius: 6px;
+    position: relative;
+    z-index: 1;
 }
 
 .board.skin-waffle .cell:hover {
     background: #ffeac7;
 }
 
-/* Hilangkan text-shadow X/O default untuk skin ini */
+/* HILANGKAN TEXT ASLI X DAN O */
 .board.skin-waffle .cell.x,
 .board.skin-waffle .cell.o {
     text-shadow: none;
-    color: transparent; /* Sembunyikan teks X/O asli jika masih ada */
+    color: transparent; 
 }
 
-/* Gaya untuk Icon SVG di dalam sel Waffle */
+/* POSISI ICON SVG MENTEGA DAN BLUEBERRY */
 .board.skin-waffle .cell svg.waffle-icon {
-    width: 70%; /* Skala icon agar pas di dalam kotak */
-    height: 70%;
-    position: absolute; /* Posisikan di tengah sel */
+    width: 75%;
+    height: 75%;
+    position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);

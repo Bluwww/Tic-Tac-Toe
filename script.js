@@ -1,21 +1,37 @@
 /* ============================================================
-   WAFFLE SKIN ASSETS (Icon SVGs)
+   WAFFLE SKIN ASSETS (Medium Detail SVGs)
    ============================================================ */
-const BUTTER_ICON = `<svg viewBox="0 0 100 100" class="waffle-icon"><rect width="80" height="80" x="10" y="10" rx="10" ry="10" fill="#f4d35e" stroke="#c09e2e" stroke-width="4"/><rect width="60" height="60" x="20" y="20" rx="5" ry="5" fill="#fdf0b0" fill-opacity="0.7"/></svg>`;
-const BLUEBERRY_ICON = `<svg viewBox="0 0 100 100" class="waffle-icon"><circle cx="40" cy="45" r="22" fill="#30508e" stroke="#203a70" stroke-width="4"/><circle cx="60" cy="55" r="22" fill="#4a70c0" stroke="#203a70" stroke-width="4"/><path d="M70 30 Q 80 20, 90 30 T 90 50 Z" fill="#4d964d" stroke="#2e662e" stroke-width="3"/></svg>`;
+// Butter dengan sedikit bayangan lelehan di bawahnya
+const BUTTER_ICON = `
+<svg viewBox="0 0 100 100" class="waffle-icon">
+    <path d="M 15 70 Q 25 90 50 85 T 85 70 Z" fill="#f4d35e" opacity="0.9"/>
+    <rect width="70" height="70" x="15" y="15" rx="8" fill="#f4d35e" stroke="#c09e2e" stroke-width="3"/>
+    <rect width="50" height="50" x="20" y="20" rx="4" fill="#fdf0b0"/>
+</svg>`;
+
+// Blueberry dengan gradasi dan tambahan daun kecil
+const BLUEBERRY_ICON = `
+<svg viewBox="0 0 100 100" class="waffle-icon">
+    <defs>
+        <radialGradient id="blue-grad" cx="30%" cy="30%" r="70%">
+            <stop offset="0%" stop-color="#8ba9d4"/>
+            <stop offset="100%" stop-color="#30508e"/>
+        </radialGradient>
+    </defs>
+    <path d="M 50 35 Q 70 15 80 30 Q 60 50 50 35 Z" fill="#4d964d" stroke="#2e662e" stroke-width="2"/>
+    <circle cx="65" cy="65" r="18" fill="url(#blue-grad)" stroke="#203a70" stroke-width="2"/>
+    <circle cx="45" cy="50" r="22" fill="url(#blue-grad)" stroke="#203a70" stroke-width="2"/>
+</svg>`;
 
 // ============================================================
 //  CONFETTI ENGINE — Canvas-based, lightweight celebration FX
-//  Hanya aktif saat player menang (PLAYER wins match).
-//  Auto-cleanup: canvas dihapus setelah animasi selesai.
 // ============================================================
 const ConfettiEngine = (() => {
-  let animId = null; // requestAnimationFrame handle
+  let animId = null;
   let canvas = null;
   let ctx = null;
   let particles = [];
 
-  // Warna confetti — disesuaikan dengan palet game (cream, merah X, biru O, emas)
   const COLORS = [
     "#ece5df",
     "#e74c3c",
@@ -26,23 +42,21 @@ const ConfettiEngine = (() => {
     "#ffffff",
   ];
 
-  // Bentuk partikel: 'rect' (kertas confetti) atau 'circle' (percikan cahaya)
   function createParticle(w, h) {
-    const side = Math.random() < 0.5 ? -1 : 1; // kiri atau kanan layar
     return {
       x: Math.random() * w,
-      y: -10 - Math.random() * 120, // mulai di atas viewport
-      vx: (Math.random() - 0.5) * 3, // drift horizontal
-      vy: 2.5 + Math.random() * 3.5, // jatuh ke bawah
+      y: -10 - Math.random() * 120,
+      vx: (Math.random() - 0.5) * 3,
+      vy: 2.5 + Math.random() * 3.5,
       rot: Math.random() * Math.PI * 2,
-      rotV: (Math.random() - 0.5) * 0.2, // kecepatan rotasi
+      rotV: (Math.random() - 0.5) * 0.2,
       w: 6 + Math.random() * 8,
       h: 3 + Math.random() * 5,
       color: COLORS[Math.floor(Math.random() * COLORS.length)],
       alpha: 0.9 + Math.random() * 0.1,
-      shape: Math.random() < 0.3 ? "circle" : "rect", // 30% lingkaran
+      shape: Math.random() < 0.3 ? "circle" : "rect",
       gravity: 0.06 + Math.random() * 0.04,
-      oscillate: (Math.random() - 0.5) * 0.015, // efek melayang kiri-kanan
+      oscillate: (Math.random() - 0.5) * 0.015,
     };
   }
 
@@ -54,19 +68,16 @@ const ConfettiEngine = (() => {
 
   function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-
     const h = canvas.height;
     let alive = false;
 
     for (const p of particles) {
-      // Update fisika
       p.vy += p.gravity;
       p.vx += p.oscillate;
       p.x += p.vx;
       p.y += p.vy;
       p.rot += p.rotV;
 
-      // Fade out saat mendekati bawah layar
       if (p.y > h * 0.75) p.alpha -= 0.012;
       if (p.alpha <= 0) continue;
       alive = true;
@@ -82,14 +93,11 @@ const ConfettiEngine = (() => {
         ctx.arc(0, 0, p.w / 2, 0, Math.PI * 2);
         ctx.fill();
       } else {
-        // Kertas confetti — dipersempit di sumbu Y untuk efek berputar
         const scaleY = Math.abs(Math.cos(p.rot));
         ctx.fillRect(-p.w / 2, (-p.h / 2) * scaleY, p.w, p.h * scaleY);
       }
       ctx.restore();
     }
-
-    // Buang partikel yang sudah tidak terlihat
     particles = particles.filter((p) => p.alpha > 0);
 
     if (alive) {
@@ -100,14 +108,8 @@ const ConfettiEngine = (() => {
   }
 
   return {
-    /**
-     * Jalankan confetti di atas semua layer.
-     * @param {number} [duration=4000] - ms sebelum tidak ada partikel baru
-     */
     start(duration = 4000) {
-      // Bersihkan sesi sebelumnya jika ada
       this.stop();
-
       canvas = document.createElement("canvas");
       canvas.id = "confetti-canvas";
       canvas.style.cssText = [
@@ -115,7 +117,7 @@ const ConfettiEngine = (() => {
         "inset:0",
         "width:100vw",
         "height:100vh",
-        "pointer-events:none", // tidak menghalangi klik
+        "pointer-events:none",
         "z-index:99999",
       ].join(";");
       document.body.appendChild(canvas);
@@ -125,16 +127,11 @@ const ConfettiEngine = (() => {
       canvas.height = window.innerHeight;
       particles = [];
 
-      // Burst awal — 160 partikel langsung
       spawn(160);
-
-      // Trickle: tambah partikel secara berkala selama `duration`
       const trickle = setInterval(() => spawn(18), 220);
       setTimeout(() => clearInterval(trickle), duration);
-
       animId = requestAnimationFrame(draw);
     },
-
     stop() {
       if (animId) {
         cancelAnimationFrame(animId);
@@ -149,7 +146,7 @@ const ConfettiEngine = (() => {
 })();
 
 // ============================================================
-//  SOUND ENGINE — Web Audio API (tidak butuh file eksternal)
+//  SOUND ENGINE
 // ============================================================
 const SoundEngine = (() => {
   let ctx = null;
@@ -219,10 +216,9 @@ const SoundEngine = (() => {
 
   return {
     isSoundEnabled: () => soundEnabled,
-
     toggle() {
       soundEnabled = !soundEnabled;
-      if (soundEnabled) {
+      if (soundEnabled)
         seq(
           [
             {
@@ -242,10 +238,8 @@ const SoundEngine = (() => {
           ],
           0.11,
         );
-      }
       return soundEnabled;
     },
-
     menuClick() {
       playTone({
         freq: 440,
@@ -258,7 +252,6 @@ const SoundEngine = (() => {
       });
       playNoise({ gain: 0.02, duration: 0.04, bandpass: 700 });
     },
-
     playerPlace() {
       playTone({
         freq: 392,
@@ -271,7 +264,6 @@ const SoundEngine = (() => {
       });
       playNoise({ gain: 0.02, duration: 0.05, bandpass: 900 });
     },
-
     botPlace() {
       playTone({
         freq: 262,
@@ -284,7 +276,6 @@ const SoundEngine = (() => {
       });
       playNoise({ gain: 0.02, duration: 0.06, bandpass: 450 });
     },
-
     roundWin() {
       seq(
         [
@@ -301,7 +292,6 @@ const SoundEngine = (() => {
         0.13,
       );
     },
-
     roundLose() {
       seq(
         [
@@ -330,7 +320,6 @@ const SoundEngine = (() => {
         0.14,
       );
     },
-
     roundDraw() {
       seq(
         [
@@ -353,7 +342,6 @@ const SoundEngine = (() => {
         0.18,
       );
     },
-
     matchWin() {
       seq(
         [
@@ -402,7 +390,6 @@ const SoundEngine = (() => {
         40,
       );
     },
-
     matchLose() {
       seq(
         [
@@ -455,9 +442,6 @@ const SoundEngine = (() => {
 
 // ============================================================
 //  BGM TRACK LIST
-//  Untuk menambah lagu baru: tambahkan objek baru ke array ini.
-//  - name  : label yang tampil di tombol Settings
-//  - file  : nama file audio (harus ada di folder yang sama dengan main.html)
 // ============================================================
 const TRACKS = [
   { name: "BEACH LO-FI", file: "artmylife-beach-lo-fi-relax-477166.mp3" },
@@ -467,13 +451,10 @@ const TRACKS = [
 
 let currentTrackIndex = 0;
 
-// ============================================================
-//  AUDIO MANAGER — satu sumber global untuk BGM & SFX volume
-// ============================================================
 const AudioManager = (() => {
   const bgAudio = document.getElementById("bg-music");
-  let bgmVolume = 35; // 0–100
-  let sfxVolume = 100; // 0–100
+  let bgmVolume = 35;
+  let sfxVolume = 100;
   let bgmEnabled = true;
   let sfxEnabled = true;
   let bgStarted = false;
@@ -514,7 +495,6 @@ const AudioManager = (() => {
           .catch(() => {});
       }
     },
-
     setBGM(val) {
       bgmVolume = parseInt(val);
       bgmEnabled = bgmVolume > 0;
@@ -523,7 +503,6 @@ const AudioManager = (() => {
       if (v) v.textContent = bgmVolume;
       syncToggleUI();
     },
-
     setSFX(val) {
       sfxVolume = parseInt(val);
       sfxEnabled = sfxVolume > 0;
@@ -532,7 +511,6 @@ const AudioManager = (() => {
       if (v) v.textContent = sfxVolume;
       syncToggleUI();
     },
-
     toggleBGM() {
       bgmEnabled = !bgmEnabled;
       if (bgmEnabled) {
@@ -557,7 +535,6 @@ const AudioManager = (() => {
       if (v) v.textContent = bgmEnabled ? bgmVolume : 0;
       return bgmEnabled;
     },
-
     toggleSFX() {
       sfxEnabled = !sfxEnabled;
       sfxVolume = sfxEnabled ? (sfxVolume === 0 ? 100 : sfxVolume) : 0;
@@ -568,7 +545,6 @@ const AudioManager = (() => {
       if (v) v.textContent = sfxVolume;
       return sfxEnabled;
     },
-
     resetDefaults() {
       bgmVolume = 35;
       bgmEnabled = true;
@@ -584,35 +560,26 @@ const AudioManager = (() => {
       if (ss) ss.value = 100;
       const sv = document.getElementById("sfx-val");
       if (sv) sv.textContent = 100;
-      // Reset track ke Track 1
       if (currentTrackIndex !== 0) this.selectTrack(0, false);
       syncToggleUI();
     },
-
-    // Ganti BGM track; playSfx=true membunyikan klik menu
     selectTrack(idx, playSfx = true) {
       if (idx < 0 || idx >= TRACKS.length) return;
       currentTrackIndex = idx;
-
       const wasEnabled = bgmEnabled;
       bgAudio.pause();
       bgAudio.src = TRACKS[idx].file;
       bgAudio.load();
-
       if (bgStarted && wasEnabled) {
         bgAudio.volume = bgmVolume / 100;
         bgAudio.play().catch(() => {});
       }
-
       if (playSfx) SoundEngine.menuClick();
       syncHighlights();
     },
   };
 })();
 
-// ============================================================
-//  GLOBAL AUDIO TOGGLE (tombol atas kanan)
-// ============================================================
 function toggleAudio(type) {
   if (type === "sound") {
     const isOn = AudioManager.toggleSFX();
@@ -643,22 +610,14 @@ let board = [],
   bScore = 0,
   isPlayerTurn = true,
   gameActive = false;
-let prevBoard = []; // Tracks previous state to trigger animation only on new pieces
-
-// Simpan screen sebelum buka Credits agar tombol Back kembali ke sana
+let prevBoard = [];
 let _prevScreen = "lobby-screen";
 
-// ============================================================
-//  NAVIGATION
-// ============================================================
 function showScreen(screenId) {
   SoundEngine.menuClick();
   const active = document.querySelector(".ui-container:not(.hidden)");
   if (active && screenId === "credits-screen") _prevScreen = active.id;
-
-  // Hentikan confetti saat meninggalkan result-screen
   if (screenId !== "result-screen") ConfettiEngine.stop();
-
   document
     .querySelectorAll(".ui-container")
     .forEach((el) => el.classList.add("hidden"));
@@ -676,16 +635,11 @@ function showScreen(screenId) {
 function openCredits() {
   showScreen("credits-screen");
 }
-
 function closeCredits() {
   showScreen(_prevScreen);
 }
 
-// ============================================================
-//  HIGHLIGHT / GLOW SYNC
-// ============================================================
 function syncHighlights() {
-  // Blur intensity
   document
     .querySelectorAll("#blur-opts .menu-btn")
     .forEach((b) => b.classList.remove("selected-opt"));
@@ -702,7 +656,6 @@ function syncHighlights() {
       .querySelector("#blur-opts .menu-btn:nth-child(3)")
       .classList.add("selected-opt");
 
-  // Board size
   document
     .querySelectorAll("#size-opts .menu-btn")
     .forEach((b) => b.classList.remove("selected-opt"));
@@ -719,7 +672,6 @@ function syncHighlights() {
       .querySelector("#size-opts .menu-btn:nth-child(3)")
       .classList.add("selected-opt");
 
-  // Difficulty
   document
     .querySelectorAll("#diff-opts .menu-btn")
     .forEach((b) => b.classList.remove("selected-opt"));
@@ -736,7 +688,6 @@ function syncHighlights() {
       .querySelector("#diff-opts .menu-btn:nth-child(3)")
       .classList.add("selected-opt");
 
-  // First turn
   document
     .querySelectorAll("#turn-opts .menu-btn")
     .forEach((b) => b.classList.remove("selected-opt"));
@@ -749,7 +700,6 @@ function syncHighlights() {
       .querySelector("#turn-opts .menu-btn:nth-child(2)")
       .classList.add("selected-opt");
 
-  // BGM Track selection
   document
     .querySelectorAll("#track-opts .menu-btn")
     .forEach((b) => b.classList.remove("selected-opt"));
@@ -758,7 +708,6 @@ function syncHighlights() {
   );
   if (activeTrackBtn) activeTrackBtn.classList.add("selected-opt");
 
-  // Board Skin Selection Sync
   const skinOpts = document.querySelectorAll("#skin-opts .menu-btn");
   if (skinOpts.length > 0) {
     skinOpts.forEach((b) => b.classList.remove("selected-opt"));
@@ -768,9 +717,6 @@ function syncHighlights() {
   }
 }
 
-// ============================================================
-//  SETTINGS LOGIC
-// ============================================================
 function setBlur(amount) {
   SoundEngine.menuClick();
   currentBlur = amount;
@@ -781,14 +727,11 @@ function setBlur(amount) {
 function setSkin(skin) {
   SoundEngine.menuClick();
   currentSkin = skin;
-
-  // Update class pada elemen board
   const boardEl = document.getElementById("board");
   if (boardEl) {
     boardEl.classList.remove("skin-default", "skin-neon", "skin-waffle");
     boardEl.classList.add("skin-" + skin);
   }
-
   syncHighlights();
 }
 
@@ -799,9 +742,6 @@ function resetDefaults() {
   AudioManager.resetDefaults();
 }
 
-// ============================================================
-//  SPLASH SCREEN
-// ============================================================
 function enterGame() {
   const splash = document.getElementById("splash-screen");
   splash.classList.add("fade-out");
@@ -809,9 +749,6 @@ function enterGame() {
   AudioManager.tryStart();
 }
 
-// ============================================================
-//  MENU FLOW
-// ============================================================
 function chooseSize(size) {
   SoundEngine.menuClick();
   currentSize = size;
@@ -847,7 +784,7 @@ function setFirstTurn(choice) {
 // ============================================================
 function startRound() {
   board = Array(currentSize * currentSize).fill(null);
-  prevBoard = Array(currentSize * currentSize).fill(null); // Reset snapshot
+  prevBoard = Array(currentSize * currentSize).fill(null);
   gameActive = true;
   isPlayerTurn = firstTurnChoice === "Player";
   renderBoard();
@@ -865,6 +802,7 @@ function renderBoard() {
   boardEl.innerHTML = "";
   boardEl.classList.remove("skin-default", "skin-neon", "skin-waffle");
   boardEl.classList.add("skin-" + currentSkin);
+
   const maxBoardSize = 450;
   const cellSize = Math.floor(maxBoardSize / currentSize);
   boardEl.style.gridTemplateColumns = `repeat(${currentSize}, ${cellSize}px)`;
@@ -873,6 +811,7 @@ function renderBoard() {
   for (let i = 0; i < board.length; i++) {
     const cell = document.createElement("div");
     cell.classList.add("cell");
+
     cell.style.fontSize = `${Math.floor(cellSize * 0.6)}px`;
 
     if (board[i]) {
@@ -887,10 +826,8 @@ function renderBoard() {
       }
 
       cell.classList.add(board[i].toLowerCase());
-      // Hanya picu animasi jika pion ini baru saja ditempatkan (tidak ada di prevBoard)
       if (board[i] !== prevBoard[i]) {
         cell.classList.add("just-placed");
-        // Hapus class setelah animasi selesai agar tidak loop
         cell.addEventListener(
           "animationend",
           () => cell.classList.remove("just-placed"),
@@ -901,8 +838,7 @@ function renderBoard() {
     cell.onclick = () => handlePlayerMove(i);
     boardEl.appendChild(cell);
   }
-
-  prevBoard = [...board]; // Simpan snapshot board saat ini
+  prevBoard = [...board];
 }
 
 function getThinkingDelay() {
@@ -926,7 +862,6 @@ function handlePlayerMove(index) {
 function botMove() {
   if (!gameActive) return;
   let bestMove;
-  // Hard: always tactical | Medium: 60% tactical, 40% random (but still blocks instant wins)
   const useTactic =
     currentDifficulty === "Hard" ||
     (currentDifficulty === "Medium" && Math.random() > 0.4);
@@ -934,7 +869,6 @@ function botMove() {
   if (useTactic) {
     bestMove = currentSize === 3 ? getBestMoveMinimax() : getHeuristicMove();
   } else {
-    // Medium "dumb" turn: still blocks a 1-move win by player
     if (currentDifficulty === "Medium") {
       for (let i = 0; i < board.length; i++) {
         if (board[i] === null) {
@@ -951,9 +885,7 @@ function botMove() {
     if (bestMove === undefined) bestMove = getRandomMove();
   }
 
-  // Safety fallback
   if (bestMove === undefined || bestMove === null) bestMove = getRandomMove();
-
   board[bestMove] = "O";
   SoundEngine.botPlace();
   renderBoard();
@@ -995,11 +927,10 @@ function endMatch(winner) {
   wintxt.style.color = winner === "PLAYER" ? "#2ecc71" : "#e74c3c";
   if (winner === "PLAYER") {
     SoundEngine.matchWin();
-    // Tunda sedikit agar layar result tampil dulu, lalu ledakkan confetti
     setTimeout(() => ConfettiEngine.start(4500), 300);
   } else {
     SoundEngine.matchLose();
-    ConfettiEngine.stop(); // Pastikan tidak ada confetti sisa
+    ConfettiEngine.stop();
   }
   showScreen("result-screen");
 }
@@ -1035,9 +966,6 @@ function checkDirection(r, c, rDir, cDir, player, winCond, size) {
   return true;
 }
 
-// ============================================================
-//  AI — RANDOM
-// ============================================================
 function getRandomMove() {
   const available = [];
   board.forEach((val, idx) => {
@@ -1046,11 +974,7 @@ function getRandomMove() {
   return available[Math.floor(Math.random() * available.length)];
 }
 
-// ============================================================
-//  AI — HEURISTIC (papan 5x5 & 6x6)
-// ============================================================
 function getHeuristicMove() {
-  // 1. Instant win
   for (let i = 0; i < board.length; i++) {
     if (board[i] === null) {
       board[i] = "O";
@@ -1061,7 +985,6 @@ function getHeuristicMove() {
       board[i] = null;
     }
   }
-  // 2. Block player's instant win
   for (let i = 0; i < board.length; i++) {
     if (board[i] === null) {
       board[i] = "X";
@@ -1072,7 +995,6 @@ function getHeuristicMove() {
       board[i] = null;
     }
   }
-  // 3. Positional scoring
   let bestScore = -Infinity;
   let bestMoves = [];
   const center = (currentSize - 1) / 2;
@@ -1082,7 +1004,6 @@ function getHeuristicMove() {
       const r = Math.floor(i / currentSize);
       const c = i % currentSize;
       let score = evaluateCell(i, "O") + evaluateCell(i, "X") * 0.95;
-      // Slight center bias to break ties
       score -= (Math.abs(r - center) + Math.abs(c - center)) * 0.1;
 
       if (score > bestScore) {
@@ -1093,13 +1014,11 @@ function getHeuristicMove() {
       }
     }
   }
-
   if (bestMoves.length > 0)
     return bestMoves[Math.floor(Math.random() * bestMoves.length)];
   return getRandomMove();
 }
 
-// Nilai seberapa bagus menaruh bidak di sel tertentu
 function evaluateCell(index, player) {
   const s = currentSize,
     w = winCondition;
@@ -1142,8 +1061,7 @@ function evaluateCell(index, player) {
           }
         }
         if (!blocked) {
-          if (playerCount === w - 1)
-            score += 10000; // 1 langkah lagi menang
+          if (playerCount === w - 1) score += 10000;
           else if (playerCount === w - 2) score += 100;
           else if (playerCount === w - 3) score += 10;
           else score += 1;
@@ -1154,9 +1072,6 @@ function evaluateCell(index, player) {
   return score;
 }
 
-// ============================================================
-//  AI — MINIMAX (papan 3x3)
-// ============================================================
 function getBestMoveMinimax() {
   let bestScore = -Infinity,
     move;
@@ -1201,11 +1116,7 @@ function minimax(newBoard, depth, isMaximizing) {
   }
 }
 
-// ============================================================
-//  INIT
-// ============================================================
 window.onload = () => {
-  // Build track selector buttons dynamically from TRACKS array
   const trackOpts = document.getElementById("track-opts");
   if (trackOpts) {
     TRACKS.forEach((track, idx) => {
