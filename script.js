@@ -22,7 +22,7 @@ const BLUEBERRY_ICON = `
 </svg>`;
 
 // ============================================================
-//  CONFETTI ENGINE
+//  CONFETTI ENGINE (Updated with Responsive Resize Fix)
 // ============================================================
 const ConfettiEngine = (() => {
   let animId = null;
@@ -59,12 +59,22 @@ const ConfettiEngine = (() => {
   }
 
   function spawn(count) {
+    if (!canvas) return;
     const w = canvas.width,
       h = canvas.height;
     for (let i = 0; i < count; i++) particles.push(createParticle(w, h));
   }
 
+  
+  function handleResize() {
+    if (canvas) {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }
+  }
+
   function draw() {
+    if (!canvas || !ctx) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     const h = canvas.height;
     let alive = false;
@@ -101,13 +111,28 @@ const ConfettiEngine = (() => {
     if (alive) {
       animId = requestAnimationFrame(draw);
     } else {
-      stop();
+      stop(); 
     }
+  }
+
+  function stop() {
+    if (animId) {
+      cancelAnimationFrame(animId);
+      animId = null;
+    }
+    
+    window.removeEventListener("resize", handleResize);
+
+    if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
+    canvas = null;
+    ctx = null;
+    particles = [];
   }
 
   return {
     start(duration = 4000) {
-      this.stop();
+      stop(); 
+      
       canvas = document.createElement("canvas");
       canvas.id = "confetti-canvas";
       canvas.style.cssText = [
@@ -125,21 +150,15 @@ const ConfettiEngine = (() => {
       canvas.height = window.innerHeight;
       particles = [];
 
+      window.addEventListener("resize", handleResize);
+
       spawn(160);
       const trickle = setInterval(() => spawn(18), 220);
       setTimeout(() => clearInterval(trickle), duration);
       animId = requestAnimationFrame(draw);
     },
-    stop() {
-      if (animId) {
-        cancelAnimationFrame(animId);
-        animId = null;
-      }
-      if (canvas && canvas.parentNode) canvas.parentNode.removeChild(canvas);
-      canvas = null;
-      ctx = null;
-      particles = [];
-    },
+    
+    stop: stop
   };
 })();
 
