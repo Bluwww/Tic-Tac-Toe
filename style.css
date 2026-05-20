@@ -260,31 +260,64 @@ body, html {
 .splash-note { font-size: 11px; letter-spacing: 2px; color: #6b6460; }
 
 /* ============================================================
-   RESPONSIVE — SMARTPHONE (lebar ≤ 600px)
+   RESPONSIVE — SMARTPHONE (Mencegah Terpotong di Layar HP)
    ============================================================ */
 @media (max-width: 600px) {
+    body, html {
+        overflow: hidden; /* Mengunci layar HP agar tidak bisa digeser ke samping akibat overflow */
+    }
+
     #splash-screen { gap: 24px; }
     .splash-title { font-size: 36px; letter-spacing: 8px; }
     .splash-sub  { font-size: 11px; letter-spacing: 5px; }
     .splash-btn  { padding: 12px 30px; font-size: 12px; letter-spacing: 3px; }
     .splash-note { font-size: 10px; }
 
-    .ui-container { left: 5%; top: 50%; width: 90%; gap: 18px; transform: translateY(-45%); }
+    /* Menyeimbangkan Container Utama agar presisi di tengah layar HP */
+    .ui-container { 
+        left: 5% !important; 
+        top: 50% !important; 
+        width: 90% !important; 
+        gap: 18px !important; 
+        transform: translateY(-50%) !important; 
+        max-height: 92vh;
+        overflow-y: auto; /* Jaga-jaga jika layar HP sangat pendek, menu bisa di-scroll ke bawah */
+        padding-right: 5px;
+    }
 
     .algoritma { font-size: 11px; letter-spacing: 6px; }
-    .minimax { font-size: 38px; letter-spacing: 6px; }
+    .minimax { font-size: 35px !important; letter-spacing: 6px; text-align: center; width: 100%; }
     .tic-tac-toe { font-size: 11px; letter-spacing: 5px; }
     .line        { width: 40px; }
-    .tagline     { font-size: 14px; }
+    .tagline     { font-size: 13px; text-align: center; }
 
-    .menu-section { width: 100%; gap: 10px; }
-    .menu-btn     { padding: 11px 16px; border-radius: 10px; }
+    .menu-section { width: 100%; gap: 10px; align-items: center; }
+    .menu-btn     { padding: 11px 16px; border-radius: 10px; width: 100%; max-width: 290px; }
     .btn-icon     { font-size: 18px; width: 30px; margin-right: 10px; }
     .btn-title    { font-size: 14px; letter-spacing: 1.5px; }
     .btn-desc     { font-size: 10px; }
 
-    .btn-horizontal-group { gap: 10px; }
-    .size-btn { width: 90px; padding: 10px 8px; }
+    /* Memaksa group tombol horizontal melentur mengikuti lebar layar HP */
+    .btn-horizontal-group { 
+        gap: 8px !important; 
+        width: 100% !important; 
+        justify-content: center !important;
+    }
+    
+    /* Mengubah ukuran tombol pilihan statis (140px) menjadi pembagian persen yang rapi di HP */
+    .btn-horizontal-group .size-btn { 
+        width: calc(50% - 6px) !important; 
+        padding: 10px 4px !important;
+        font-size: 12px !important;
+    }
+
+    /* Khusus untuk pilihan ukuran battlefield / preview size agar muat sejajar bertiga */
+    #size-opts .size-btn,
+    #diff-opts .size-btn,
+    #turn-opts .size-btn,
+    #app-size-opts .size-btn {
+        width: calc(33.33% - 6px) !important;
+    }
 
     .top-right-controls { top: 2%; right: 3%; gap: 12px; }
     .control-item i     { font-size: 16px; margin-bottom: 4px; }
@@ -292,18 +325,39 @@ body, html {
     .divider-vertical   { height: 28px; }
     #credits-btn        { top: 2%; left: 3%; width: 34px; height: 34px; font-size: 13px; }
 
-    .settings-content { flex-direction: column; gap: 20px; overflow-y: auto; max-height: 70vh; }
-    .settings-column { max-width: 100%; gap: 16px; }
-    .setting-label   { font-size: 11px; letter-spacing: 2px; }
-    .info-box        { padding: 14px; font-size: 11px; }
+    /* FIX UTAMA: Mengatur susunan kolom pengaturan/appearance agar turun ke bawah */
+    .settings-content { 
+        flex-direction: column !important; 
+        gap: 20px !important; 
+        width: 100% !important;
+        align-items: center !important;
+    }
+    
+    .settings-column { 
+        width: 100% !important; 
+        max-width: 100% !important; 
+        gap: 16px !important; 
+        align-items: center !important;
+    }
+    
+    .setting-item {
+        width: 100% !important;
+        align-items: center !important;
+    }
+
+    .setting-label   { font-size: 11px; letter-spacing: 2px; text-align: center; }
+    .info-box        { padding: 14px; font-size: 11px; width: 100%; max-width: 300px; }
     .score-item      { font-size: 13px; letter-spacing: 1px; }
     .score-number    { font-size: 20px; }
     .best-of         { font-size: 11px; letter-spacing: 2px; }
 
-    .gameplay-wrapper { flex-direction: column; align-items: center; gap: 12px; }
+    .volume-row { width: 100%; max-width: 280px; }
+
+    /* Mengatur area gameplay */
+    .gameplay-wrapper { flex-direction: column; align-items: center; gap: 12px; width: 100%; }
 
     .scoreboard {
-        width: 100%; flex-direction: row; flex-wrap: wrap; padding: 10px 14px;
+        width: 100%; max-width: 300px; flex-direction: row; flex-wrap: wrap; padding: 10px 14px;
         gap: 8px; align-items: center; justify-content: space-between; border-radius: 10px;
     }
     .best-of {
@@ -313,25 +367,15 @@ body, html {
     #round-status { font-size: 10px; }
     .game-tip     { font-size: 10px; }
 
+    /* Memastikan papan permainan utama dan papan preview di menu appearance berukuran pas */
     #board, #preview-board {
-        width:  min(88vw, calc(100vh - 170px)) !important;
-        height: min(88vw, calc(100vh - 170px)) !important;
+        width:  min(84vw, calc(100vh - 220px)) !important;
+        height: min(84vw, calc(100vh - 220px)) !important;
         padding: 8px; gap: 5px; box-sizing: border-box;
     }
 
     .cell { font-size: clamp(14px, 6vw, 36px) !important; border-radius: 3px; }
-
     #match-winner-text { font-size: 36px !important; }
-}
-
-@media (max-height: 450px) and (max-width: 900px) {
-    .ui-container { top: 50%; transform: translateY(-50%); gap: 10px; }
-    .minimax      { font-size: 28px; letter-spacing: 4px; }
-    .tagline      { display: none; }
-
-    .gameplay-wrapper { flex-direction: row; gap: 16px; align-items: center; }
-    .scoreboard { flex-direction: column; width: 130px; min-width: 130px; padding: 10px; }
-    #board, #preview-board { width:  min(55vw, 85vh) !important; height: min(55vw, 85vh) !important; }
 }
 
 /* ============================================================
