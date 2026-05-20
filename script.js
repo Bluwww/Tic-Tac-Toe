@@ -22,7 +22,7 @@ const BLUEBERRY_ICON = `
 </svg>`;
 
 // ============================================================
-//  CONFETTI ENGINE (Updated with Responsive Resize Fix)
+//   CONFETTI ENGINE (Updated with Responsive Resize Fix)
 // ============================================================
 const ConfettiEngine = (() => {
   let animId = null;
@@ -65,7 +65,6 @@ const ConfettiEngine = (() => {
     for (let i = 0; i < count; i++) particles.push(createParticle(w, h));
   }
 
-  
   function handleResize() {
     if (canvas) {
       canvas.width = window.innerWidth;
@@ -163,7 +162,7 @@ const ConfettiEngine = (() => {
 })();
 
 // ============================================================
-//  SOUND ENGINE
+//   SOUND ENGINE
 // ============================================================
 const SoundEngine = (() => {
   let ctx = null;
@@ -365,7 +364,7 @@ const SoundEngine = (() => {
           { freq: 392, type: "sine", gain: 0.2, duration: 0.13, release: 0.1 },
           { freq: 523, type: "sine", gain: 0.2, duration: 0.13, release: 0.1 },
           { freq: 659, type: "sine", gain: 0.2, duration: 0.13, release: 0.1 },
-          { freq: 784, type: "sine", gain: 0.25, duration: 0.3, release: 0.22 },
+          { freq: 784, type: "day", gain: 0.25, duration: 0.3, release: 0.22 },
         ],
         0.13,
       );
@@ -458,7 +457,7 @@ const SoundEngine = (() => {
 })();
 
 // ============================================================
-//  BGM TRACK LIST
+//   BGM TRACK LIST
 // ============================================================
 const TRACKS = [
   { name: "BEACH LO-FI", file: "artmylife-beach-lo-fi-relax-477166.mp3" },
@@ -614,7 +613,7 @@ function toggleAudio(type) {
 }
 
 // ============================================================
-//  GAME STATE
+//   GAME STATE
 // ============================================================
 let currentSize = 3;
 let currentDifficulty = "Hard";
@@ -744,7 +743,7 @@ function syncHighlights() {
 }
 
 // ============================================================
-//  APPEARANCE SETTINGS & PREVIEW LOGIC
+//   APPEARANCE SETTINGS & PREVIEW LOGIC
 // ============================================================
 function setBlur(amount) {
   SoundEngine.menuClick();
@@ -782,17 +781,16 @@ function renderPreview() {
   previewEl.innerHTML = "";
   previewEl.className = "board skin-" + currentSkin; // Terapkan skin ke preview
 
-  // Ukuran preview board sedikit lebih kecil dari main board agar pas di menu (320px vs 450px)
-  const maxPreview = 320;
-  const cellSize = Math.floor(maxPreview / previewSize);
-
-  previewEl.style.gridTemplateColumns = `repeat(${previewSize}, ${cellSize}px)`;
-  previewEl.style.gridTemplateRows = `repeat(${previewSize}, ${cellSize}px)`;
+  // FIX PREVIEW GRID: Menggunakan unit pecahan fr agar otomatis membagi kolom secara proporsional
+  previewEl.style.gridTemplateColumns = `repeat(${previewSize}, 1fr)`;
+  previewEl.style.gridTemplateRows = `repeat(${previewSize}, 1fr)`;
 
   for (let i = 0; i < previewSize * previewSize; i++) {
     const cell = document.createElement("div");
     cell.className = "cell";
-    cell.style.fontSize = `${Math.floor(cellSize * 0.6)}px`;
+    
+    // Skala ukuran font dinamis untuk preview agar muat di grid besar
+    cell.style.fontSize = `calc(120px / ${previewSize})`;
 
     let piece = null;
     // Bikin pattern buatan untuk ditunjukkan di preview
@@ -822,7 +820,7 @@ function resetDefaults() {
 }
 
 // ============================================================
-//  MAIN GAME FLOW
+//   MAIN GAME FLOW
 // ============================================================
 function enterGame() {
   const splash = document.getElementById("splash-screen");
@@ -882,16 +880,16 @@ function renderBoard() {
   boardEl.classList.remove("skin-default", "skin-neon", "skin-waffle");
   boardEl.classList.add("skin-" + currentSkin);
 
-  const maxBoardSize = 450;
-  const cellSize = Math.floor(maxBoardSize / currentSize);
-  boardEl.style.gridTemplateColumns = `repeat(${currentSize}, ${cellSize}px)`;
-  boardEl.style.gridTemplateRows = `repeat(${currentSize}, ${cellSize}px)`;
+  // FIX GAMEBOARD GRID: Menggunakan unit pecahan fr agar 100% presisi di grid 5x5 dan 6x6
+  boardEl.style.gridTemplateColumns = `repeat(${currentSize}, 1fr)`;
+  boardEl.style.gridTemplateRows = `repeat(${currentSize}, 1fr)`;
 
   for (let i = 0; i < board.length; i++) {
     const cell = document.createElement("div");
     cell.classList.add("cell");
 
-    cell.style.fontSize = `${Math.floor(cellSize * 0.6)}px`;
+    // Skala ukuran tulisan dinamis berdasarkan jumlah baris
+    cell.style.fontSize = `calc(180px / ${currentSize})`;
 
     if (board[i]) {
       if (currentSkin === "waffle") {
@@ -1020,7 +1018,7 @@ function updateScoreboard() {
 }
 
 // ============================================================
-//  WIN DETECTION
+//   WIN DETECTION
 // ============================================================
 function checkWin(player) {
   const s = currentSize,
@@ -1136,14 +1134,13 @@ function evaluateCell(index, player) {
             playerCount++;
           } else if (cell !== null) {
             blocked = true;
-            break;
           }
         }
         if (!blocked) {
-          if (playerCount === w - 1) score += 10000;
-          else if (playerCount === w - 2) score += 100;
-          else if (playerCount === w - 3) score += 10;
-          else score += 1;
+          if (playerCount === w - 1) score += 50;
+          else if (playerCount === 2) score += 10;
+          else if (playerCount === 1) score += 2;
+          else score += 0.5;
         }
       }
     }
@@ -1151,13 +1148,16 @@ function evaluateCell(index, player) {
   return score;
 }
 
+// ============================================================
+//   MINIMAX ALGORITHM FOR 3x3 ONLY
+// ============================================================
 function getBestMoveMinimax() {
-  let bestScore = -Infinity,
-    move;
-  for (let i = 0; i < 9; i++) {
+  let bestScore = -Infinity;
+  let move;
+  for (let i = 0; i < board.length; i++) {
     if (board[i] === null) {
       board[i] = "O";
-      const score = minimax(board, 0, false);
+      let score = minimax(board, 0, false);
       board[i] = null;
       if (score > bestScore) {
         bestScore = score;
@@ -1172,6 +1172,7 @@ function minimax(newBoard, depth, isMaximizing) {
   if (checkWin("O")) return 10 - depth;
   if (checkWin("X")) return depth - 10;
   if (newBoard.every((cell) => cell !== null)) return 0;
+  
   if (isMaximizing) {
     let best = -Infinity;
     for (let i = 0; i < 9; i++) {
@@ -1201,16 +1202,21 @@ window.onload = () => {
     TRACKS.forEach((track, idx) => {
       const btn = document.createElement("button");
       btn.className = "menu-btn size-btn";
-      btn.style.cssText =
-        "width:120px; padding:10px; flex-direction:column; gap:4px;";
-      btn.innerHTML = `
-                <span style="font-size:18px;">♪</span>
-                <span class="btn-title" style="font-size:11px; letter-spacing:1.5px;">${track.name}</span>
-            `;
+      btn.textContent = track.name;
       btn.onclick = () => AudioManager.selectTrack(idx);
       trackOpts.appendChild(btn);
     });
   }
+
+  // Mengatur slider volume musik & sfx agar sinkron ke AudioManager
+  const bgmSlider = document.getElementById("bgm-slider");
+  if (bgmSlider) {
+    bgmSlider.addEventListener("input", (e) => AudioManager.setBGM(e.target.value));
+  }
+  const sfxSlider = document.getElementById("sfx-slider");
+  if (sfxSlider) {
+    sfxSlider.addEventListener("input", (e) => AudioManager.setSFX(e.target.value));
+  }
+
   syncHighlights();
-  renderPreview(); // Render live preview board saat halaman di-load
 };
