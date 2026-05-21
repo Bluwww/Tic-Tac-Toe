@@ -10,15 +10,9 @@ const BUTTER_ICON = `
 
 const BLUEBERRY_ICON = `
 <svg viewBox="0 0 100 100" class="waffle-icon">
-    <defs>
-        <radialGradient id="blue-grad" cx="30%" cy="30%" r="70%">
-            <stop offset="0%" stop-color="#8ba9d4"/>
-            <stop offset="100%" stop-color="#30508e"/>
-        </radialGradient>
-    </defs>
     <path d="M 50 35 Q 70 15 80 30 Q 60 50 50 35 Z" fill="#4d964d" stroke="#2e662e" stroke-width="2"/>
-    <circle cx="65" cy="65" r="18" fill="url(#blue-grad)" stroke="#203a70" stroke-width="2"/>
-    <circle cx="45" cy="50" r="22" fill="url(#blue-grad)" stroke="#203a70" stroke-width="2"/>
+    <circle cx="65" cy="65" r="18" fill="#3b5e9d" stroke="#203a70" stroke-width="2"/>
+    <circle cx="45" cy="50" r="22" fill="#4a73b8" stroke="#203a70" stroke-width="2"/>
 </svg>`;
 
 // ============================================================
