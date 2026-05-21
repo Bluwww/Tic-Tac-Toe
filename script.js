@@ -1176,6 +1176,28 @@ function minimax(newBoard, depth, isMaximizing) {
   }
 }
 
+// ============================================================
+//   WATER RIPPLE CLICK EFFECT
+// ============================================================
+(function initWaterRipple() {
+  function spawnRipple(x, y) {
+    const classes = ['ring-1', 'ring-2', 'ring-3', 'drop'];
+    classes.forEach(cls => {
+      const el = document.createElement('div');
+      el.className = `water-ripple ${cls}`;
+      el.style.left = x + 'px';
+      el.style.top  = y + 'px';
+      document.body.appendChild(el);
+      el.addEventListener('animationend', () => el.remove());
+    });
+  }
+  document.addEventListener('mousedown', e => spawnRipple(e.clientX, e.clientY));
+  document.addEventListener('touchstart', e => {
+    const t = e.touches[0];
+    if (t) spawnRipple(t.clientX, t.clientY);
+  }, { passive: true });
+})();
+
 window.onload = () => {
   const trackOpts = document.getElementById("track-opts");
   if (trackOpts) {
