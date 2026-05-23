@@ -453,3 +453,432 @@ body, html {
     50%  { transform: translate(-50%, -50%) scale(1.4); opacity: 0.8; }
     100% { transform: translate(-50%, -50%) scale(0.6); opacity: 0;   }
 }
+
+/* ============================================================
+   FITUR BARU 1: CUSTOM KURSOR (BUTTER & BLUEBERRY THEME)
+   ============================================================ */
+body.cursor-butter {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 100 100'><rect width='60' height='60' x='20' y='20' rx='8' fill='%23f4d35e' stroke='%23c09e2e' stroke-width='5'/><rect width='35' height='35' x='25' y='25' rx='4' fill='%23fdf0b0'/></svg>") 16 16, auto;
+}
+body.cursor-butter button, body.cursor-butter [onclick], body.cursor-butter input {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 100 100'><rect width='65' height='65' x='15' y='15' rx='8' fill='%23fdf0b0' stroke='%23f4d35e' stroke-width='6'/></svg>") 18 18, pointer;
+}
+
+body.cursor-blueberry {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 100 100'><circle cx='50' cy='50' r='30' fill='%233b5e9d' stroke='%23203a70' stroke-width='5'/><circle cx='44' cy='44' r='10' fill='%235b7ebd'/></svg>") 16 16, auto;
+}
+body.cursor-blueberry button, body.cursor-blueberry [onclick], body.cursor-blueberry input {
+    cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 100 100'><circle cx='50' cy='50' r='32' fill='%235b7ebd' stroke='%233b5e9d' stroke-width='6'/></svg>") 18 18, pointer;
+}
+
+/* Aktivasi Tombol Pilihan yang Sedang Aktif di UI Menu */
+#app-cursor-opts .menu-btn.active {
+    background: rgba(236, 229, 223, 0.2);
+    border-color: #ece5df;
+    box-shadow: 0 0 10px rgba(236, 229, 223, 0.3);
+}
+
+/* ============================================================
+   MUSIC DISC WIDGET — Premium Vinyl Player
+   Sinkronisasi dengan AudioManager & TRACKS existing
+   ============================================================ */
+
+/* --- CSS Variables per Track Theme --- */
+:root {
+    --disc-color-1:     #c8956a;   /* BEACH LO-FI  – warm sunset amber   */
+    --disc-color-2:     #6a7fc8;   /* AVENTURE     – dreamy blue-purple   */
+    --disc-color-3:     #00e5ff;   /* PULSEBOX     – cyber neon cyan      */
+
+    --disc-accent-1:    #f2d4b8;
+    --disc-accent-2:    #b8c6f2;
+    --disc-accent-3:    #ff4ecb;
+
+    --disc-glow-1:      rgba(200, 149, 106, 0.55);
+    --disc-glow-2:      rgba(106, 127, 200, 0.55);
+    --disc-glow-3:      rgba(0, 229, 255, 0.55);
+
+    /* Active track  (defaults to track 0) */
+    --disc-active-color:  var(--disc-color-1);
+    --disc-active-accent: var(--disc-accent-1);
+    --disc-active-glow:   var(--disc-glow-1);
+}
+
+/* --- Widget Wrapper --- */
+.music-disc-widget {
+    position: absolute;
+    bottom: 28px;
+    right: 28px;
+    z-index: 90;
+    width: 86px;
+    height: 86px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: auto;
+    cursor: pointer;
+
+    /* Smooth show/hide transitions */
+    opacity: 1;
+    transform: scale(1) translateY(0);
+    transition:
+        opacity        0.5s cubic-bezier(0.4, 0, 0.2, 1),
+        transform      0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.music-disc-widget.disc-hidden {
+    opacity: 0;
+    transform: scale(0.78) translateY(10px);
+    pointer-events: none;
+}
+
+/* --- Hover: subtle scale + glow boost --- */
+.music-disc-widget:hover .disc-body {
+    transform: scale(1.07);
+    box-shadow:
+        0 0 22px 6px var(--disc-active-glow),
+        0 8px 28px rgba(0,0,0,0.7),
+        inset 0 1px 3px rgba(255,255,255,0.18);
+}
+.music-disc-widget:hover .disc-aura {
+    opacity: 0.85;
+    transform: scale(1.18);
+}
+.music-disc-widget:hover .disc-tonearm {
+    transform: rotate(-18deg);
+}
+
+/* --- Glow Aura (behind disc) --- */
+.disc-aura {
+    position: absolute;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: radial-gradient(circle, var(--disc-active-glow) 0%, transparent 72%);
+    opacity: 0.55;
+    transform: scale(1);
+    transition:
+        opacity        0.6s ease,
+        transform      0.6s ease,
+        background     0.7s ease;
+    pointer-events: none;
+    filter: blur(4px);
+}
+
+.music-disc-widget.disc-idle .disc-aura {
+    opacity: 0.18;
+}
+
+/* --- Ripple rings (fire on track change) --- */
+.disc-ripple {
+    position: absolute;
+    width: 82px;
+    height: 82px;
+    border-radius: 50%;
+    border: 1.5px solid var(--disc-active-accent);
+    opacity: 0;
+    pointer-events: none;
+    transform: scale(0.9);
+    transition: border-color 0.6s ease;
+}
+
+.disc-ripple--1 { animation-delay: 0ms; }
+.disc-ripple--2 { animation-delay: 160ms; }
+
+/* Triggered via JS class */
+.disc-ripple.disc-ripple-fire {
+    animation: discRippleExpand 0.85s cubic-bezier(0.2, 0.6, 0.4, 1) forwards;
+}
+
+@keyframes discRippleExpand {
+    0%   { transform: scale(0.85); opacity: 0.75; }
+    100% { transform: scale(1.9);  opacity: 0;    }
+}
+
+/* --- Disc Body --- */
+.disc-body {
+    position: relative;
+    width: 78px;
+    height: 78px;
+    border-radius: 50%;
+    overflow: hidden;
+
+    /* Multi-layer vinyl texture */
+    background:
+        radial-gradient(circle at 50% 50%,
+            #3a3a3a 0%,
+            #0e0e0e 28%,
+            #1e1e1e 42%,
+            #090909 62%,
+            #1a1a1a 74%,
+            #0a0a0a 100%
+        );
+
+    box-shadow:
+        0 0 14px 3px var(--disc-active-glow),
+        0 6px 22px rgba(0,0,0,0.8),
+        inset 0 1px 3px rgba(255,255,255,0.13);
+
+    border: 1.5px solid rgba(255,255,255,0.08);
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    transition:
+        transform      0.35s cubic-bezier(0.34, 1.56, 0.64, 1),
+        box-shadow     0.6s ease;
+
+    /* Rotation managed by JS class */
+}
+
+/* --- Spinning Animation --- */
+@keyframes discSpin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+}
+
+.disc-body.disc-spinning {
+    animation: discSpin 8s linear infinite;
+}
+
+/* Smooth deceleration: remove class triggers transition via paused state */
+.disc-body.disc-decelerating {
+    animation: discSpin 8s linear infinite;
+    animation-play-state: paused;
+    /* CSS cannot decelerate, we use JS for that — class is kept for reference */
+}
+
+/* --- Groove Rings --- */
+.disc-grooves {
+    position: absolute;
+    inset: 0;
+    border-radius: 50%;
+    pointer-events: none;
+}
+
+.groove {
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid rgba(255,255,255,0.045);
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+}
+.groove-1 { width: 92%; height: 92%; }
+.groove-2 { width: 76%; height: 76%; }
+.groove-3 { width: 60%; height: 60%; }
+.groove-4 { width: 44%; height: 44%; }
+
+/* --- Reflection shimmer overlay --- */
+.disc-reflection {
+    position: absolute;
+    top: -20%;
+    left: -10%;
+    width: 70%;
+    height: 60%;
+    background: radial-gradient(ellipse at 40% 30%,
+        rgba(255,255,255,0.10) 0%,
+        transparent 70%
+    );
+    border-radius: 50%;
+    pointer-events: none;
+    transform: rotate(-25deg);
+}
+
+/* --- Center Label --- */
+.disc-label {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: conic-gradient(
+        var(--disc-active-color) 0deg,
+        var(--disc-active-accent) 120deg,
+        var(--disc-active-color) 240deg,
+        var(--disc-active-accent) 360deg
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 8px 2px rgba(0,0,0,0.6),
+                inset 0 1px 2px rgba(255,255,255,0.2);
+    transition: background 0.7s ease;
+    z-index: 2;
+}
+
+.disc-label-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    width: 100%;
+    height: 100%;
+    position: relative;
+}
+
+.disc-track-name {
+    font-family: 'Cinzel', serif;
+    font-size: 3.8px;
+    letter-spacing: 0.6px;
+    color: rgba(255,255,255,0.9);
+    text-align: center;
+    line-height: 1.1;
+    text-shadow: 0 0 4px rgba(0,0,0,0.8);
+    white-space: nowrap;
+    overflow: hidden;
+    max-width: 28px;
+    padding: 0 2px;
+}
+
+/* --- Spindle hole --- */
+.disc-spindle {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #050505;
+    border: 1px solid rgba(255,255,255,0.2);
+    box-shadow: inset 0 0 2px rgba(0,0,0,0.9);
+}
+
+/* --- Tonearm --- */
+.disc-tonearm {
+    position: absolute;
+    bottom: -6px;
+    right: -10px;
+    width: 32px;
+    height: 5px;
+    background: linear-gradient(to right, rgba(200,200,200,0.5), rgba(180,180,180,0.25));
+    border-radius: 3px;
+    transform-origin: right center;
+    transform: rotate(-22deg);
+    transition: transform 0.5s cubic-bezier(0.34, 1.2, 0.64, 1);
+    pointer-events: none;
+    backdrop-filter: blur(2px);
+    border: 0.5px solid rgba(255,255,255,0.12);
+}
+
+.disc-tonearm-head {
+    position: absolute;
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,255,255,0.5), rgba(200,200,200,0.2));
+    border: 0.5px solid rgba(255,255,255,0.25);
+}
+
+/* When music playing: tonearm slightly engaged */
+.music-disc-widget:not(.disc-idle) .disc-tonearm {
+    transform: rotate(-10deg);
+}
+
+/* --- Idle floating note --- */
+.disc-idle-note {
+    position: absolute;
+    bottom: -2px;
+    right: -2px;
+    font-size: 13px;
+    color: var(--disc-active-accent);
+    opacity: 0;
+    pointer-events: none;
+    text-shadow: 0 0 6px var(--disc-active-glow);
+    transition:
+        opacity 0.4s ease,
+        color   0.6s ease,
+        text-shadow 0.6s ease;
+    animation: discNoteFloat 2.4s ease-in-out infinite;
+}
+
+.music-disc-widget.disc-idle .disc-idle-note {
+    opacity: 0.6;
+}
+
+@keyframes discNoteFloat {
+    0%, 100% { transform: translateY(0px); }
+    50%       { transform: translateY(-4px); }
+}
+
+/* --- Track theme transitions (color morph) --- */
+.music-disc-widget.track-0 {
+    --disc-active-color:  var(--disc-color-1);
+    --disc-active-accent: var(--disc-accent-1);
+    --disc-active-glow:   var(--disc-glow-1);
+}
+.music-disc-widget.track-1 {
+    --disc-active-color:  var(--disc-color-2);
+    --disc-active-accent: var(--disc-accent-2);
+    --disc-active-glow:   var(--disc-glow-2);
+}
+.music-disc-widget.track-2 {
+    --disc-active-color:  var(--disc-color-3);
+    --disc-active-accent: var(--disc-accent-3);
+    --disc-active-glow:   var(--disc-glow-3);
+}
+
+/* --- Fade transition on track change --- */
+.disc-label.disc-label-fade {
+    animation: discLabelFade 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes discLabelFade {
+    0%   { opacity: 0; transform: scale(0.88); }
+    60%  { opacity: 1; }
+    100% { transform: scale(1); }
+}
+
+/* Pulse glow on track change */
+.disc-body.disc-pulse {
+    animation: discBodyPulse 0.55s cubic-bezier(0.4, 0, 0.2, 1);
+}
+@keyframes discBodyPulse {
+    0%   { box-shadow: 0 0 30px 10px var(--disc-active-glow), 0 6px 22px rgba(0,0,0,0.8), inset 0 1px 3px rgba(255,255,255,0.13); }
+    60%  { box-shadow: 0 0 10px 2px  var(--disc-active-glow), 0 6px 22px rgba(0,0,0,0.8), inset 0 1px 3px rgba(255,255,255,0.13); }
+    100% { box-shadow: 0 0 14px 3px  var(--disc-active-glow), 0 6px 22px rgba(0,0,0,0.8), inset 0 1px 3px rgba(255,255,255,0.13); }
+}
+
+/* --- Responsive: smaller on mobile --- */
+@media (max-width: 600px) {
+    .music-disc-widget {
+        width: 66px;
+        height: 66px;
+        bottom: 18px;
+        left: 18px;
+    }
+    .disc-body {
+        width: 60px;
+        height: 60px;
+    }
+    .disc-aura {
+        width: 62px;
+        height: 62px;
+    }
+    .disc-ripple {
+        width: 64px;
+        height: 64px;
+    }
+    .disc-label {
+        width: 28px;
+        height: 28px;
+    }
+    .disc-track-name {
+        font-size: 3px;
+        max-width: 22px;
+    }
+    .disc-spindle {
+        width: 4px;
+        height: 4px;
+    }
+}
+
+/* ============================================================
+   FITUR FIX 4: SOLUSI BUG TOMBOL BACK DI CREDIT
+   ============================================================ */
+/* Masalah utama tombol back macet karena ditimpa element penutup transparan */
+#credits-screen {
+    z-index: 200 !important; /* Naikkan layer di atas kontrol audio & overlay */
+}
+#credits-screen .menu-btn {
+    position: relative;
+    z-index: 210 !important; /* Pastikan tombol menangkap sentuhan/klik penuh */
+}

@@ -98,6 +98,16 @@
                             <button class="menu-btn size-btn" style="width:70px;padding:10px;" onclick="setPreviewSize(6)">6x6</button>
                         </div>
                     </div>
+                    
+                    <div class="setting-item" style="margin-top: 15px;">
+                        <span class="setting-label">CUSTOM CURSOR</span>
+                        <div class="btn-horizontal-group" id="app-cursor-opts">
+                            <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setCustomCursor('default')">Default</button>
+                            <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setCustomCursor('butter')">Butter</button>
+                            <button class="menu-btn size-btn" style="width:100px;padding:10px;" onclick="setCustomCursor('blueberry')">Blueberry</button>
+                        </div>
+                    </div>
+
                     <div style="margin-top: 40px;">
                         <button class="menu-btn" style="width:200px;" onclick="showScreen('lobby-screen')">
                             <div class="btn-icon"><i class="fas fa-arrow-left"></i></div>
@@ -154,7 +164,7 @@
                     <div class="setting-item">
                         <span class="setting-label">BGM TRACK</span>
                         <div class="btn-horizontal-group" id="track-opts">
-                            </div>
+                        </div>
                     </div>
                     <div style="margin-top:auto;display:flex;gap:15px;">
                         <button class="menu-btn" style="width:200px;" onclick="resetDefaults()">
@@ -298,6 +308,50 @@
                     <div class="btn-text-wrapper"><span class="btn-title">MAIN MENU</span></div>
                 </button>
             </div>
+        </div>
+
+        <!-- MUSIC DISC WIDGET — Premium Vinyl Player -->
+        <div id="music-disc-widget" class="music-disc-widget">
+
+            <!-- Pulse / ripple rings (animate on track change) -->
+            <div class="disc-ripple disc-ripple--1"></div>
+            <div class="disc-ripple disc-ripple--2"></div>
+
+            <!-- Glow aura behind disc -->
+            <div class="disc-aura" id="disc-aura"></div>
+
+            <!-- Vinyl disc body -->
+            <div id="disc-body" class="disc-body">
+
+                <!-- Groove rings (decorative) -->
+                <div class="disc-grooves">
+                    <div class="groove groove-1"></div>
+                    <div class="groove groove-2"></div>
+                    <div class="groove groove-3"></div>
+                    <div class="groove groove-4"></div>
+                </div>
+
+                <!-- Reflection shimmer overlay -->
+                <div class="disc-reflection"></div>
+
+                <!-- Center label area -->
+                <div class="disc-label" id="disc-label">
+                    <div class="disc-label-inner">
+                        <div class="disc-track-name" id="disc-track-name">BEACH LO-FI</div>
+                        <div class="disc-spindle"></div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Floating music note (idle state indicator) -->
+            <div class="disc-idle-note" id="disc-idle-note">♪</div>
+
+            <!-- Tonearm -->
+            <div class="disc-tonearm" id="disc-tonearm">
+                <div class="disc-tonearm-head"></div>
+            </div>
+
         </div>
 
         <div class="bottom-left">1.0.0</div>

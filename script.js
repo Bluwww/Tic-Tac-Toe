@@ -1211,3 +1211,270 @@ window.onload = () => {
   syncHighlights();
   renderPreview(); // Render live preview board saat halaman di-load
 };
+
+// ============================================================
+// FITUR BARU 1: LOGIKA GANTI KURSOR (APPEARANCE)
+// ============================================================
+function setCustomCursor(type) {
+  // Bersihkan kelas kursor sebelumnya
+  document.body.classList.remove('cursor-butter', 'cursor-blueberry');
+  
+  // Pasang kelas baru berdasarkan pilihan model & warna
+  if (type === 'butter') {
+    document.body.classList.add('cursor-butter');
+  } else if (type === 'blueberry') {
+    document.body.classList.add('cursor-blueberry');
+  }
+  
+  // Berikan style visual 'active' pada tombol yang diklik
+  const container = document.getElementById('app-cursor-opts');
+  if (container) {
+    const buttons = container.getElementsByClassName('menu-btn');
+    for (let btn of buttons) {
+      btn.classList.remove('active');
+      if (type === 'butter' && btn.innerText.includes('Butter')) btn.classList.add('active');
+      else if (type === 'blueberry' && btn.innerText.includes('Blueberry')) btn.classList.add('active');
+      else if (type === 'default' && btn.innerText.includes('Default')) btn.classList.add('active');
+    }
+  }
+}
+
+// Tambahkan inisialisasi status active saat pertama kali dibuka
+document.addEventListener("DOMContentLoaded", () => {
+  setCustomCursor('default');
+});
+
+
+// ============================================================
+// MUSIC DISC WIDGET — Premium Vinyl Player
+// Fully integrated with AudioManager, TRACKS & bgmEnabled
+// ============================================================
+const MusicDisc = (() => {
+
+    // ── DOM refs ──────────────────────────────────────────────
+    const widget    = document.getElementById('music-disc-widget');
+    const discBody  = document.getElementById('disc-body');
+    const discLabel = document.getElementById('disc-label');
+    const discAura  = document.getElementById('disc-aura');
+    const discName  = document.getElementById('disc-track-name');
+    const ripple1   = widget?.querySelector('.disc-ripple--1');
+    const ripple2   = widget?.querySelector('.disc-ripple--2');
+
+    // ── Internal state ────────────────────────────────────────
+    let  _trackIdx      = 0;      // mirrors currentTrackIndex
+    let  _isPlaying     = false;
+    let  _spinAngle     = 0;      // current visual rotation (deg)
+    let  _spinSpeed     = 0;      // current deg/frame
+    const TARGET_SPEED  = 0.45;   // deg/frame at full RPM (≈8s/rev @60fps)
+    const ACCEL         = 0.012;
+    const DECEL         = 0.008;
+    let  _rafId         = null;
+    let  _rippleTimeout = null;
+    let  _transitionBusy = false;
+
+    // Track meta for disc UI
+    const TRACK_META = [
+        { label: 'BEACH LO-FI',  trackClass: 'track-0' },
+        { label: 'AVENTURE',     trackClass: 'track-1' },
+        { label: 'PULSEBOX',     trackClass: 'track-2' },
+    ];
+
+    // ── Rotation loop ─────────────────────────────────────────
+    function rotateTick() {
+        if (!widget) return;
+
+        if (_isPlaying) {
+            _spinSpeed = Math.min(_spinSpeed + ACCEL, TARGET_SPEED);
+        } else {
+            _spinSpeed = Math.max(_spinSpeed - DECEL, 0);
+        }
+
+        _spinAngle = (_spinAngle + _spinSpeed) % 360;
+        if (discBody) discBody.style.transform = `rotate(${_spinAngle}deg)`;
+
+        // keep loop alive while spinning or decelerating
+        if (_spinSpeed > 0 || _isPlaying) {
+            _rafId = requestAnimationFrame(rotateTick);
+        } else {
+            _rafId = null;
+        }
+    }
+
+    function startLoop() {
+        if (!_rafId) _rafId = requestAnimationFrame(rotateTick);
+    }
+
+    // ── Play / Pause state ────────────────────────────────────
+    function setPlaying(playing) {
+        if (_isPlaying === playing) return;
+        _isPlaying = playing;
+
+        if (widget) {
+            widget.classList.toggle('disc-idle', !playing);
+        }
+
+        startLoop(); // let loop decelerate if pausing
+    }
+
+    // ── Track change ──────────────────────────────────────────
+    function setTrack(idx) {
+        if (!widget || idx < 0 || idx >= TRACK_META.length) return;
+        if (idx === _trackIdx && !_transitionBusy) {
+            _trackIdx = idx;
+            return;
+        }
+
+        _trackIdx = idx;
+        _transitionBusy = true;
+
+        // 1. Remove old track class, add new
+        TRACK_META.forEach((_, i) => widget.classList.remove(`track-${i}`));
+        widget.classList.add(TRACK_META[idx].trackClass);
+
+        // 2. Update track name label with fade
+        if (discName)  discName.textContent = TRACK_META[idx].label;
+        if (discLabel) {
+            discLabel.classList.remove('disc-label-fade');
+            // Force reflow
+            void discLabel.offsetWidth;
+            discLabel.classList.add('disc-label-fade');
+        }
+
+        // 3. Pulse glow on disc body
+        if (discBody) {
+            discBody.classList.remove('disc-pulse');
+            void discBody.offsetWidth;
+            discBody.classList.add('disc-pulse');
+            discBody.addEventListener('animationend', () => {
+                discBody.classList.remove('disc-pulse');
+                _transitionBusy = false;
+            }, { once: true });
+        }
+
+        // 4. Fire ripple rings
+        fireRipple();
+    }
+
+    function fireRipple() {
+        if (_rippleTimeout) clearTimeout(_rippleTimeout);
+
+        [ripple1, ripple2].forEach(r => {
+            if (!r) return;
+            r.classList.remove('disc-ripple-fire');
+            void r.offsetWidth;
+            r.classList.add('disc-ripple-fire');
+        });
+
+        // Clean up class after animation
+        _rippleTimeout = setTimeout(() => {
+            [ripple1, ripple2].forEach(r => r?.classList.remove('disc-ripple-fire'));
+        }, 1200);
+    }
+
+    // ── Visibility (show/hide per screen) ─────────────────────
+    function setVisible(visible) {
+        if (!widget) return;
+        widget.classList.toggle('disc-hidden', !visible);
+    }
+
+    // ── Sync with AudioManager (called from audio polling) ────
+    function sync() {
+        const bgMusic = document.getElementById('bg-music');
+        if (!bgMusic || !widget) return;
+
+        const isActuallyPlaying = !bgMusic.paused && !bgMusic.ended && bgMusic.currentTime > 0;
+        setPlaying(isActuallyPlaying);
+    }
+
+    // ── Screen visibility watcher ─────────────────────────────
+    function observeScreens() {
+        // Show disc on most screens; hide on turn/difficulty/game (optional)
+        // Currently: always visible once game window is active
+        const allScreens = document.querySelectorAll('.ui-container');
+        allScreens.forEach(s => {
+            const observer = new MutationObserver(() => {
+                // Always show disc when game window is active
+                setVisible(true);
+            });
+            observer.observe(s, { attributes: true, attributeFilter: ['class'] });
+        });
+    }
+
+    // ── Click interaction: toggle BGM ─────────────────────────
+    function onDiscClick() {
+        if (typeof AudioManager !== 'undefined') {
+            AudioManager.toggleBGM();
+        }
+    }
+
+    // ── Init ──────────────────────────────────────────────────
+    function init() {
+        if (!widget) return;
+
+        // Set initial track theme
+        widget.classList.add('track-0');
+        widget.classList.add('disc-idle');
+
+        // Click to toggle music
+        widget.addEventListener('click', onDiscClick);
+
+        // Poll audio state every 250ms (matches old vinyl logic)
+        setInterval(sync, 250);
+
+        // Observe screen transitions
+        observeScreens();
+
+        // Hide on splash, show after enter
+        setVisible(false);
+    }
+
+    return { init, setTrack, setPlaying, setVisible, sync, fireRipple };
+})();
+
+// ── Hook into AudioManager.selectTrack ───────────────────────
+// Wrap selectTrack to also notify MusicDisc
+(function patchAudioManager() {
+    const checkReady = setInterval(() => {
+        if (typeof AudioManager === 'undefined') return;
+        clearInterval(checkReady);
+
+        const _origSelect = AudioManager.selectTrack.bind(AudioManager);
+        AudioManager.selectTrack = function(idx, playSfx = true) {
+            _origSelect(idx, playSfx);
+            MusicDisc.setTrack(idx);
+        };
+    }, 50);
+})();
+
+// ── Show disc after user enters game (enterGame hook) ────────
+const _origEnterGame = typeof enterGame !== 'undefined' ? enterGame : null;
+// We'll patch enterGame after DOMContentLoaded since it's defined later in script
+document.addEventListener('DOMContentLoaded', () => {
+    MusicDisc.init();
+
+    // Patch enterGame to show disc
+    const _nativeEnter = window.enterGame;
+    if (typeof _nativeEnter === 'function') {
+        window.enterGame = function() {
+            _nativeEnter();
+            MusicDisc.setVisible(true);
+        };
+    }
+});
+
+// Fallback: also listen for splash click to reveal disc
+document.addEventListener('click', function revealOnce(e) {
+    const splash = document.getElementById('splash-screen');
+    if (splash && (splash.style.display === 'none' || splash.classList.contains('hidden') || splash.style.opacity === '0')) {
+        MusicDisc.setVisible(true);
+        document.removeEventListener('click', revealOnce);
+    }
+}, { capture: true });
+
+// Also reveal after 100ms if splash is gone
+setInterval(() => {
+    const splash = document.getElementById('splash-screen');
+    if (splash && splash.style.display === 'none') {
+        MusicDisc.setVisible(true);
+    }
+}, 300);
