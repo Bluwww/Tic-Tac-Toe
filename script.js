@@ -598,6 +598,7 @@ let currentBlur = 6;
 let winCondition = 3;
 let currentSkin = "default";
 let previewSize = 3; // Untuk live preview skin
+let gameMode = "bot";  // "bot" | "local"
 let board = [],
   pScore = 0,
   bScore = 0,
@@ -716,6 +717,29 @@ function syncHighlights() {
     if (previewSize === 5) prevOpts[1].classList.add("selected-opt");
     if (previewSize === 6) prevOpts[2].classList.add("selected-opt");
   }
+
+  // ── Mode selection highlights ─────────────────────────────
+  document
+    .querySelectorAll("#mode-opts .menu-btn")
+    .forEach((b) => b.classList.remove("selected-opt"));
+  const modeIdx = gameMode === "bot" ? 0 : 1;
+  const modeBtn = document.querySelector(
+    `#mode-opts .menu-btn:nth-child(${modeIdx + 1})`,
+  );
+  if (modeBtn) modeBtn.classList.add("selected-opt");
+
+  // ── Local turn highlights ─────────────────────────────────
+  document
+    .querySelectorAll("#turn-local-opts .menu-btn")
+    .forEach((b) => b.classList.remove("selected-opt"));
+  if (firstTurnChoice === "Player1")
+    document
+      .querySelector("#turn-local-opts .menu-btn:nth-child(1)")
+      ?.classList.add("selected-opt");
+  if (firstTurnChoice === "Player2")
+    document
+      .querySelector("#turn-local-opts .menu-btn:nth-child(2)")
+      ?.classList.add("selected-opt");
 }
 
 // ============================================================
@@ -810,7 +834,22 @@ function chooseSize(size) {
   SoundEngine.menuClick();
   currentSize = size;
   syncHighlights();
-  setTimeout(() => showScreen("difficulty-screen"), 300);
+  // Now goes to mode selection first
+  setTimeout(() => showScreen("mode-screen"), 300);
+}
+
+// ── New: choose game mode ─────────────────────────────────────
+function chooseMode(mode) {
+  SoundEngine.menuClick();
+  gameMode = mode;
+  syncHighlights();
+  if (mode === "bot") {
+    setTimeout(() => showScreen("difficulty-screen"), 300);
+  } else {
+    // Local 2-player: set winCondition here (no difficulty screen)
+    winCondition = currentSize === 3 ? 3 : 4;
+    setTimeout(() => showScreen("turn-screen-local"), 300);
+  }
 }
 
 function setDifficulty(diff) {
@@ -836,18 +875,46 @@ function setFirstTurn(choice) {
   }, 400);
 }
 
+// ── New: 2-player local first turn ───────────────────────────
+function setFirstTurnLocal(choice) {
+  SoundEngine.menuClick();
+  firstTurnChoice = choice; // "Player1" | "Player2"
+  document.getElementById("game-tip").innerText =
+    `Tip: Get ${winCondition} in a row to win!`;
+  pScore = 0;
+  bScore = 0;
+  updateScoreboard();
+  syncHighlights();
+  setTimeout(() => {
+    showScreen("game-screen");
+    startRound();
+  }, 400);
+}
+
 function startRound() {
   board = Array(currentSize * currentSize).fill(null);
   prevBoard = Array(currentSize * currentSize).fill(null);
   gameActive = true;
-  isPlayerTurn = firstTurnChoice === "Player";
-  renderBoard();
-  if (!isPlayerTurn) {
-    document.getElementById("round-status").innerText = "Bot is thinking...";
-    setTimeout(botMove, getThinkingDelay());
+
+  if (gameMode === "local") {
+    // Player 1 = X, Player 2 = O
+    isPlayerTurn = firstTurnChoice !== "Player2";
+    renderBoard();
+    const bannerText = isPlayerTurn ? "PLAYER 1 TURN" : "PLAYER 2 TURN";
+    updateLocalStatus(); // sets round-status text + scoreboard highlight
+    setTimeout(() => showTurnBanner(bannerText), 200);
   } else {
-    document.getElementById("round-status").innerText =
-      `Your turn! (${currentDifficulty})`;
+    isPlayerTurn = firstTurnChoice === "Player";
+    renderBoard();
+    if (!isPlayerTurn) {
+      document.getElementById("round-status").innerText = "Bot is thinking...";
+      document.getElementById("round-status").className = "";
+      setTimeout(botMove, getThinkingDelay());
+    } else {
+      document.getElementById("round-status").innerText =
+        `Your turn! (${currentDifficulty})`;
+      document.getElementById("round-status").className = "";
+    }
   }
 }
 
@@ -902,15 +969,36 @@ function getThinkingDelay() {
 }
 
 function handlePlayerMove(index) {
-  if (!gameActive || board[index] || !isPlayerTurn) return;
-  board[index] = "X";
-  SoundEngine.playerPlace();
-  renderBoard();
-  if (checkWin("X")) return endRound("X");
-  if (board.every((cell) => cell !== null)) return endRound("DRAW");
-  isPlayerTurn = false;
-  document.getElementById("round-status").innerText = "Bot is thinking...";
-  setTimeout(botMove, getThinkingDelay());
+  if (!gameActive || board[index]) return;
+
+  if (gameMode === "local") {
+    // Both players click — piece depends on whose turn it is
+    const piece = isPlayerTurn ? "X" : "O";
+    board[index] = piece;
+    SoundEngine.playerPlace();
+    renderBoard();
+    if (checkWin(piece)) return endRound(piece);
+    if (board.every((cell) => cell !== null)) return endRound("DRAW");
+    // Toggle turn
+    isPlayerTurn = !isPlayerTurn;
+    updateLocalStatus(); // sets round-status text + scoreboard highlight
+    setTimeout(
+      () => showTurnBanner(isPlayerTurn ? "PLAYER 1 TURN" : "PLAYER 2 TURN"),
+      120,
+    );
+  } else {
+    // Bot mode — only player (X) can click
+    if (!isPlayerTurn) return;
+    board[index] = "X";
+    SoundEngine.playerPlace();
+    renderBoard();
+    if (checkWin("X")) return endRound("X");
+    if (board.every((cell) => cell !== null)) return endRound("DRAW");
+    isPlayerTurn = false;
+    document.getElementById("round-status").innerText = "Bot is thinking...";
+    document.getElementById("round-status").className = "";
+    setTimeout(botMove, getThinkingDelay());
+  }
 }
 
 function botMove() {
@@ -946,28 +1034,55 @@ function botMove() {
   if (checkWin("O")) return endRound("O");
   if (board.every((cell) => cell !== null)) return endRound("DRAW");
   isPlayerTurn = true;
-  document.getElementById("round-status").innerText =
-    `Your turn! (${currentDifficulty})`;
+  const rs = document.getElementById("round-status");
+  rs.innerText = `Your turn! (${currentDifficulty})`;
+  rs.className = "";
 }
 
 function endRound(winner) {
   gameActive = false;
-  if (winner === "X") {
-    pScore++;
-    SoundEngine.roundWin();
-  } else if (winner === "O") {
-    bScore++;
-    SoundEngine.roundLose();
+  const rs = document.getElementById("round-status");
+
+  if (gameMode === "local") {
+    // ── LOCAL 2-PLAYER round end ──────────────────────────────
+    if (winner === "X") {
+      pScore++;
+      SoundEngine.roundWin();
+      rs.className = "status-p1";
+      rs.innerText = "PLAYER 1 wins this round!";
+    } else if (winner === "O") {
+      bScore++;
+      SoundEngine.roundWin(); // both are players — both celebrate
+      rs.className = "status-p2";
+      rs.innerText = "PLAYER 2 wins this round!";
+    } else {
+      SoundEngine.roundDraw();
+      rs.className = "";
+      rs.innerText = "Round Draw!";
+    }
   } else {
-    SoundEngine.roundDraw();
+    // ── BOT MODE round end ────────────────────────────────────
+    if (winner === "X") {
+      pScore++;
+      SoundEngine.roundWin();
+      rs.className = "";
+      rs.innerText = "You won this round!";
+    } else if (winner === "O") {
+      bScore++;
+      SoundEngine.roundLose();
+      rs.className = "";
+      rs.innerText = "Bot won this round!";
+    } else {
+      SoundEngine.roundDraw();
+      rs.className = "";
+      rs.innerText = "Round Draw!";
+    }
   }
-  document.getElementById("round-status").innerText =
-    winner === "DRAW"
-      ? "Round Draw!"
-      : winner === "X"
-        ? "You won this round!"
-        : "Bot won this round!";
+
+  // Clear active turn glow during break
+  updateScoreboardActiveTurn(null);
   updateScoreboard();
+
   if (pScore === 3 || bScore === 3) {
     setTimeout(() => endMatch(pScore === 3 ? "PLAYER" : "BOT"), 1000);
   } else {
@@ -977,14 +1092,29 @@ function endRound(winner) {
 
 function endMatch(winner) {
   const wintxt = document.getElementById("match-winner-text");
-  wintxt.innerText = winner === "PLAYER" ? "YOU WIN!" : "YOU LOSE";
-  wintxt.style.color = winner === "PLAYER" ? "#2ecc71" : "#e74c3c";
-  if (winner === "PLAYER") {
-    SoundEngine.matchWin();
+
+  if (gameMode === "local") {
+    // ── LOCAL 2-PLAYER match end ──────────────────────────────
+    if (winner === "PLAYER") {
+      wintxt.innerText = "PLAYER 1 WINS";
+      wintxt.style.color = "#e74c3c";
+    } else {
+      wintxt.innerText = "PLAYER 2 WINS";
+      wintxt.style.color = "#3498db";
+    }
+    SoundEngine.matchWin(); // champion fanfare for both
     setTimeout(() => ConfettiEngine.start(4500), 300);
   } else {
-    SoundEngine.matchLose();
-    ConfettiEngine.stop();
+    // ── BOT MODE match end ────────────────────────────────────
+    wintxt.innerText = winner === "PLAYER" ? "YOU WIN!" : "YOU LOSE";
+    wintxt.style.color = winner === "PLAYER" ? "#2ecc71" : "#e74c3c";
+    if (winner === "PLAYER") {
+      SoundEngine.matchWin();
+      setTimeout(() => ConfettiEngine.start(4500), 300);
+    } else {
+      SoundEngine.matchLose();
+      ConfettiEngine.stop();
+    }
   }
   showScreen("result-screen");
 }
@@ -992,6 +1122,85 @@ function endMatch(winner) {
 function updateScoreboard() {
   document.getElementById("score-player").innerText = pScore;
   document.getElementById("score-bot").innerText = bScore;
+
+  const lp = document.getElementById("label-player");
+  const lb = document.getElementById("label-bot");
+  if (lp && lb) {
+    if (gameMode === "local") {
+      lp.innerText = "PLAYER 1  (X)";
+      lb.innerText = "PLAYER 2  (O)";
+    } else {
+      lp.innerText = "PLAYER (X)";
+      lb.innerText = "BOT (O)";
+    }
+  }
+}
+
+// ── Highlight the active player's scoreboard row ─────────────
+function updateScoreboardActiveTurn(activeSide) {
+  // activeSide: "player" | "bot" | null (clear)
+  const pItem = document.getElementById("score-item-player");
+  const bItem = document.getElementById("score-item-bot");
+  if (!pItem || !bItem) return;
+  pItem.classList.remove("active-turn");
+  bItem.classList.remove("active-turn");
+  if (activeSide === "player") pItem.classList.add("active-turn");
+  if (activeSide === "bot") bItem.classList.add("active-turn");
+}
+
+// ── Update round-status text for local mode ───────────────────
+function updateLocalStatus() {
+  if (gameMode !== "local") return;
+  const rs = document.getElementById("round-status");
+  if (isPlayerTurn) {
+    rs.innerText = "PLAYER 1 TURN";
+    rs.className = "status-p1";
+    updateScoreboardActiveTurn("player");
+  } else {
+    rs.innerText = "PLAYER 2 TURN";
+    rs.className = "status-p2";
+    updateScoreboardActiveTurn("bot");
+  }
+}
+
+// ── Cinematic turn banner ─────────────────────────────────────
+function showTurnBanner(text) {
+  const banner = document.getElementById("turn-banner");
+  const inner = document.getElementById("turn-banner-inner");
+  const label = document.getElementById("turn-banner-label");
+  const pip = document.getElementById("turn-banner-pip");
+  if (!banner || !inner || !label) return;
+
+  const isP1 = text.includes("1");
+  label.innerText = text;
+  if (pip) pip.className = isP1 ? "turn-banner-pip" : "turn-banner-pip pip-p2";
+
+  // Reset animation
+  inner.classList.remove("banner-enter", "banner-exit");
+  banner.classList.remove("hidden");
+  void inner.offsetWidth; // force reflow
+
+  inner.classList.add("banner-enter");
+
+  // Hold → exit  (enter ~0.6s + hold 1.6s + exit ~0.45s)
+  const holdTimer = setTimeout(() => {
+    inner.classList.remove("banner-enter");
+    inner.classList.add("banner-exit");
+    inner.addEventListener(
+      "animationend",
+      () => {
+        banner.classList.add("hidden");
+        inner.classList.remove("banner-exit");
+      },
+      { once: true },
+    );
+  }, 2000);
+
+  // Safety fallback
+  setTimeout(() => {
+    banner.classList.add("hidden");
+    inner.classList.remove("banner-enter", "banner-exit");
+  }, 3200);
 }
 
 // ============================================================
