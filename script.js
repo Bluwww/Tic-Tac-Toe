@@ -597,8 +597,8 @@ let firstTurnChoice = "Player";
 let currentBlur = 6;
 let winCondition = 3;
 let currentSkin = "default";
-let previewSize = 3; // Untuk live preview skin
-let gameMode = "bot";  // "bot" | "local"
+let previewSize = 3;
+let gameMode = "bot";
 let board = [],
   pScore = 0,
   bScore = 0,
@@ -606,6 +606,11 @@ let board = [],
   gameActive = false;
 let prevBoard = [];
 let _prevScreen = "lobby-screen";
+
+// Variabel Timer & Lock untuk Banner Turn
+let bannerHoldTimer = null;
+let bannerSafetyTimer = null;
+let isTurnLocked = false; // <-- VARIABLE BARU untuk melock papan
 
 function showScreen(screenId) {
   SoundEngine.menuClick();
@@ -718,7 +723,6 @@ function syncHighlights() {
     if (previewSize === 6) prevOpts[2].classList.add("selected-opt");
   }
 
-  // ── Mode selection highlights ─────────────────────────────
   document
     .querySelectorAll("#mode-opts .menu-btn")
     .forEach((b) => b.classList.remove("selected-opt"));
@@ -728,7 +732,6 @@ function syncHighlights() {
   );
   if (modeBtn) modeBtn.classList.add("selected-opt");
 
-  // ── Local turn highlights ─────────────────────────────────
   document
     .querySelectorAll("#turn-local-opts .menu-btn")
     .forEach((b) => b.classList.remove("selected-opt"));
@@ -742,9 +745,6 @@ function syncHighlights() {
       ?.classList.add("selected-opt");
 }
 
-// ============================================================
-//  APPEARANCE SETTINGS & PREVIEW LOGIC
-// ============================================================
 function setBlur(amount) {
   SoundEngine.menuClick();
   currentBlur = amount;
@@ -755,16 +755,13 @@ function setBlur(amount) {
 function setSkin(skin) {
   SoundEngine.menuClick();
   currentSkin = skin;
-
-  // Update main game board if exists
   const boardEl = document.getElementById("board");
   if (boardEl) {
     boardEl.classList.remove("skin-default", "skin-neon", "skin-waffle");
     boardEl.classList.add("skin-" + skin);
   }
-
   syncHighlights();
-  renderPreview(); // Update preview visual
+  renderPreview();
 }
 
 function setPreviewSize(size) {
@@ -779,9 +776,8 @@ function renderPreview() {
   if (!previewEl) return;
 
   previewEl.innerHTML = "";
-  previewEl.className = "board skin-" + currentSkin; // Terapkan skin ke preview
+  previewEl.className = "board skin-" + currentSkin;
 
-  // Ukuran preview board sedikit lebih kecil dari main board agar pas di menu (320px vs 450px)
   const maxPreview = 320;
   const cellSize = Math.floor(maxPreview / previewSize);
 
@@ -794,7 +790,6 @@ function renderPreview() {
     cell.style.fontSize = `${Math.floor(cellSize * 0.6)}px`;
 
     let piece = null;
-    // Bikin pattern buatan untuk ditunjukkan di preview
     if (i === 0 || i === previewSize + 2 || i === previewSize * 2 + 1)
       piece = "X";
     if (i === 1 || i === previewSize || i === previewSize * 2 + 2) piece = "O";
@@ -807,7 +802,6 @@ function renderPreview() {
       }
       cell.classList.add(piece.toLowerCase());
     }
-
     previewEl.appendChild(cell);
   }
 }
@@ -820,9 +814,6 @@ function resetDefaults() {
   AudioManager.resetDefaults();
 }
 
-// ============================================================
-//  MAIN GAME FLOW
-// ============================================================
 function enterGame() {
   const splash = document.getElementById("splash-screen");
   splash.classList.add("fade-out");
@@ -834,11 +825,9 @@ function chooseSize(size) {
   SoundEngine.menuClick();
   currentSize = size;
   syncHighlights();
-  // Now goes to mode selection first
   setTimeout(() => showScreen("mode-screen"), 300);
 }
 
-// ── New: choose game mode ─────────────────────────────────────
 function chooseMode(mode) {
   SoundEngine.menuClick();
   gameMode = mode;
@@ -846,7 +835,6 @@ function chooseMode(mode) {
   if (mode === "bot") {
     setTimeout(() => showScreen("difficulty-screen"), 300);
   } else {
-    // Local 2-player: set winCondition here (no difficulty screen)
     winCondition = currentSize === 3 ? 3 : 4;
     setTimeout(() => showScreen("turn-screen-local"), 300);
   }
@@ -875,10 +863,9 @@ function setFirstTurn(choice) {
   }, 400);
 }
 
-// ── New: 2-player local first turn ───────────────────────────
 function setFirstTurnLocal(choice) {
   SoundEngine.menuClick();
-  firstTurnChoice = choice; // "Player1" | "Player2"
+  firstTurnChoice = choice;
   document.getElementById("game-tip").innerText =
     `Tip: Get ${winCondition} in a row to win!`;
   pScore = 0;
@@ -895,13 +882,13 @@ function startRound() {
   board = Array(currentSize * currentSize).fill(null);
   prevBoard = Array(currentSize * currentSize).fill(null);
   gameActive = true;
+  isTurnLocked = false; // Reset lock saat round baru dimulai
 
   if (gameMode === "local") {
-    // Player 1 = X, Player 2 = O
     isPlayerTurn = firstTurnChoice !== "Player2";
     renderBoard();
     const bannerText = isPlayerTurn ? "PLAYER 1 TURN" : "PLAYER 2 TURN";
-    updateLocalStatus(); // sets round-status text + scoreboard highlight
+    updateLocalStatus();
     setTimeout(() => showTurnBanner(bannerText), 200);
   } else {
     isPlayerTurn = firstTurnChoice === "Player";
@@ -932,16 +919,12 @@ function renderBoard() {
   for (let i = 0; i < board.length; i++) {
     const cell = document.createElement("div");
     cell.classList.add("cell");
-
     cell.style.fontSize = `${Math.floor(cellSize * 0.6)}px`;
 
     if (board[i]) {
       if (currentSkin === "waffle") {
-        if (board[i] === "X") {
-          cell.innerHTML = BUTTER_ICON;
-        } else if (board[i] === "O") {
-          cell.innerHTML = BLUEBERRY_ICON;
-        }
+        if (board[i] === "X") cell.innerHTML = BUTTER_ICON;
+        else if (board[i] === "O") cell.innerHTML = BLUEBERRY_ICON;
       } else {
         cell.innerText = board[i];
       }
@@ -969,25 +952,24 @@ function getThinkingDelay() {
 }
 
 function handlePlayerMove(index) {
-  if (!gameActive || board[index]) return;
+  // BLOKIR JIKA GAME TIDAK AKTIF, KOTAK SUDAH TERISI, ATAU BANNER SEDANG MUNCUL
+  if (!gameActive || board[index] || isTurnLocked) return;
 
   if (gameMode === "local") {
-    // Both players click — piece depends on whose turn it is
     const piece = isPlayerTurn ? "X" : "O";
     board[index] = piece;
     SoundEngine.playerPlace();
     renderBoard();
     if (checkWin(piece)) return endRound(piece);
     if (board.every((cell) => cell !== null)) return endRound("DRAW");
-    // Toggle turn
+
     isPlayerTurn = !isPlayerTurn;
-    updateLocalStatus(); // sets round-status text + scoreboard highlight
+    updateLocalStatus();
     setTimeout(
       () => showTurnBanner(isPlayerTurn ? "PLAYER 1 TURN" : "PLAYER 2 TURN"),
       120,
     );
   } else {
-    // Bot mode — only player (X) can click
     if (!isPlayerTurn) return;
     board[index] = "X";
     SoundEngine.playerPlace();
@@ -1044,7 +1026,6 @@ function endRound(winner) {
   const rs = document.getElementById("round-status");
 
   if (gameMode === "local") {
-    // ── LOCAL 2-PLAYER round end ──────────────────────────────
     if (winner === "X") {
       pScore++;
       SoundEngine.roundWin();
@@ -1052,7 +1033,7 @@ function endRound(winner) {
       rs.innerText = "PLAYER 1 wins this round!";
     } else if (winner === "O") {
       bScore++;
-      SoundEngine.roundWin(); // both are players — both celebrate
+      SoundEngine.roundWin();
       rs.className = "status-p2";
       rs.innerText = "PLAYER 2 wins this round!";
     } else {
@@ -1061,7 +1042,6 @@ function endRound(winner) {
       rs.innerText = "Round Draw!";
     }
   } else {
-    // ── BOT MODE round end ────────────────────────────────────
     if (winner === "X") {
       pScore++;
       SoundEngine.roundWin();
@@ -1079,7 +1059,6 @@ function endRound(winner) {
     }
   }
 
-  // Clear active turn glow during break
   updateScoreboardActiveTurn(null);
   updateScoreboard();
 
@@ -1094,7 +1073,6 @@ function endMatch(winner) {
   const wintxt = document.getElementById("match-winner-text");
 
   if (gameMode === "local") {
-    // ── LOCAL 2-PLAYER match end ──────────────────────────────
     if (winner === "PLAYER") {
       wintxt.innerText = "PLAYER 1 WINS";
       wintxt.style.color = "#e74c3c";
@@ -1102,10 +1080,9 @@ function endMatch(winner) {
       wintxt.innerText = "PLAYER 2 WINS";
       wintxt.style.color = "#3498db";
     }
-    SoundEngine.matchWin(); // champion fanfare for both
+    SoundEngine.matchWin();
     setTimeout(() => ConfettiEngine.start(4500), 300);
   } else {
-    // ── BOT MODE match end ────────────────────────────────────
     wintxt.innerText = winner === "PLAYER" ? "YOU WIN!" : "YOU LOSE";
     wintxt.style.color = winner === "PLAYER" ? "#2ecc71" : "#e74c3c";
     if (winner === "PLAYER") {
@@ -1136,9 +1113,7 @@ function updateScoreboard() {
   }
 }
 
-// ── Highlight the active player's scoreboard row ─────────────
 function updateScoreboardActiveTurn(activeSide) {
-  // activeSide: "player" | "bot" | null (clear)
   const pItem = document.getElementById("score-item-player");
   const bItem = document.getElementById("score-item-bot");
   if (!pItem || !bItem) return;
@@ -1148,7 +1123,6 @@ function updateScoreboardActiveTurn(activeSide) {
   if (activeSide === "bot") bItem.classList.add("active-turn");
 }
 
-// ── Update round-status text for local mode ───────────────────
 function updateLocalStatus() {
   if (gameMode !== "local") return;
   const rs = document.getElementById("round-status");
@@ -1163,7 +1137,7 @@ function updateLocalStatus() {
   }
 }
 
-// ── Cinematic turn banner ─────────────────────────────────────
+// ── Cinematic turn banner (DENGAN LOCK) ────────────────────────
 function showTurnBanner(text) {
   const banner = document.getElementById("turn-banner");
   const inner = document.getElementById("turn-banner-inner");
@@ -1175,15 +1149,20 @@ function showTurnBanner(text) {
   label.innerText = text;
   if (pip) pip.className = isP1 ? "turn-banner-pip" : "turn-banner-pip pip-p2";
 
-  // Reset animation
+  // MENGUNCI PAPAN PERMAINAN AGAR TIDAK BISA DIKLIK SEMENTARA
+  isTurnLocked = true;
+
+  if (bannerHoldTimer) clearTimeout(bannerHoldTimer);
+  if (bannerSafetyTimer) clearTimeout(bannerSafetyTimer);
+
   inner.classList.remove("banner-enter", "banner-exit");
   banner.classList.remove("hidden");
-  void inner.offsetWidth; // force reflow
+  void inner.offsetWidth;
 
   inner.classList.add("banner-enter");
 
-  // Hold → exit  (enter ~0.6s + hold 1.6s + exit ~0.45s)
-  const holdTimer = setTimeout(() => {
+  // Notifikasi muncul lalu ditahan selama 1 detik (1000ms), lalu mulai hilang
+  bannerHoldTimer = setTimeout(() => {
     inner.classList.remove("banner-enter");
     inner.classList.add("banner-exit");
     inner.addEventListener(
@@ -1191,16 +1170,19 @@ function showTurnBanner(text) {
       () => {
         banner.classList.add("hidden");
         inner.classList.remove("banner-exit");
+        // MEMBUKA KUNCI PAPAN SETELAH ANIMASI KELUAR SELESAI
+        isTurnLocked = false;
       },
       { once: true },
     );
-  }, 2000);
+  }, 1000);
 
-  // Safety fallback
-  setTimeout(() => {
+  // Pengaman jika animasi tidak berjalan sempurna (1.8 detik total durasi)
+  bannerSafetyTimer = setTimeout(() => {
     banner.classList.add("hidden");
     inner.classList.remove("banner-enter", "banner-exit");
-  }, 3200);
+    isTurnLocked = false;
+  }, 1800);
 }
 
 // ============================================================
@@ -1384,21 +1366,27 @@ function minimax(newBoard, depth, isMaximizing) {
 // ============================================================
 (function initWaterRipple() {
   function spawnRipple(x, y) {
-    const classes = ['ring-1', 'ring-2', 'ring-3', 'drop'];
-    classes.forEach(cls => {
-      const el = document.createElement('div');
+    const classes = ["ring-1", "ring-2", "ring-3", "drop"];
+    classes.forEach((cls) => {
+      const el = document.createElement("div");
       el.className = `water-ripple ${cls}`;
-      el.style.left = x + 'px';
-      el.style.top  = y + 'px';
+      el.style.left = x + "px";
+      el.style.top = y + "px";
       document.body.appendChild(el);
-      el.addEventListener('animationend', () => el.remove());
+      el.addEventListener("animationend", () => el.remove());
     });
   }
-  document.addEventListener('mousedown', e => spawnRipple(e.clientX, e.clientY));
-  document.addEventListener('touchstart', e => {
-    const t = e.touches[0];
-    if (t) spawnRipple(t.clientX, t.clientY);
-  }, { passive: true });
+  document.addEventListener("mousedown", (e) =>
+    spawnRipple(e.clientX, e.clientY),
+  );
+  document.addEventListener(
+    "touchstart",
+    (e) => {
+      const t = e.touches[0];
+      if (t) spawnRipple(t.clientX, t.clientY);
+    },
+    { passive: true },
+  );
 })();
 
 window.onload = () => {
@@ -1418,272 +1406,244 @@ window.onload = () => {
     });
   }
   syncHighlights();
-  renderPreview(); // Render live preview board saat halaman di-load
+  renderPreview();
 };
 
 // ============================================================
-// FITUR BARU 1: LOGIKA GANTI KURSOR (APPEARANCE)
+// FITUR: LOGIKA GANTI KURSOR (APPEARANCE)
 // ============================================================
 function setCustomCursor(type) {
-  // Bersihkan kelas kursor sebelumnya
-  document.body.classList.remove('cursor-butter', 'cursor-blueberry');
-  
-  // Pasang kelas baru berdasarkan pilihan model & warna
-  if (type === 'butter') {
-    document.body.classList.add('cursor-butter');
-  } else if (type === 'blueberry') {
-    document.body.classList.add('cursor-blueberry');
+  document.body.classList.remove("cursor-butter", "cursor-blueberry");
+
+  if (type === "butter") {
+    document.body.classList.add("cursor-butter");
+  } else if (type === "blueberry") {
+    document.body.classList.add("cursor-blueberry");
   }
-  
-  // Berikan style visual 'active' pada tombol yang diklik
-  const container = document.getElementById('app-cursor-opts');
+
+  const container = document.getElementById("app-cursor-opts");
   if (container) {
-    const buttons = container.getElementsByClassName('menu-btn');
+    const buttons = container.getElementsByClassName("menu-btn");
     for (let btn of buttons) {
-      btn.classList.remove('active');
-      if (type === 'butter' && btn.innerText.includes('Butter')) btn.classList.add('active');
-      else if (type === 'blueberry' && btn.innerText.includes('Blueberry')) btn.classList.add('active');
-      else if (type === 'default' && btn.innerText.includes('Default')) btn.classList.add('active');
+      btn.classList.remove("active");
+      if (type === "butter" && btn.innerText.includes("Butter"))
+        btn.classList.add("active");
+      else if (type === "blueberry" && btn.innerText.includes("Blueberry"))
+        btn.classList.add("active");
+      else if (type === "default" && btn.innerText.includes("Default"))
+        btn.classList.add("active");
     }
   }
 }
 
-// Tambahkan inisialisasi status active saat pertama kali dibuka
 document.addEventListener("DOMContentLoaded", () => {
-  setCustomCursor('default');
+  setCustomCursor("default");
 });
-
 
 // ============================================================
 // MUSIC DISC WIDGET — Premium Vinyl Player
-// Fully integrated with AudioManager, TRACKS & bgmEnabled
 // ============================================================
 const MusicDisc = (() => {
+  const widget = document.getElementById("music-disc-widget");
+  const discBody = document.getElementById("disc-body");
+  const discLabel = document.getElementById("disc-label");
+  const discAura = document.getElementById("disc-aura");
+  const discName = document.getElementById("disc-track-name");
+  const ripple1 = widget?.querySelector(".disc-ripple--1");
+  const ripple2 = widget?.querySelector(".disc-ripple--2");
 
-    // ── DOM refs ──────────────────────────────────────────────
-    const widget    = document.getElementById('music-disc-widget');
-    const discBody  = document.getElementById('disc-body');
-    const discLabel = document.getElementById('disc-label');
-    const discAura  = document.getElementById('disc-aura');
-    const discName  = document.getElementById('disc-track-name');
-    const ripple1   = widget?.querySelector('.disc-ripple--1');
-    const ripple2   = widget?.querySelector('.disc-ripple--2');
+  let _trackIdx = 0;
+  let _isPlaying = false;
+  let _spinAngle = 0;
+  let _spinSpeed = 0;
+  const TARGET_SPEED = 0.45;
+  const ACCEL = 0.012;
+  const DECEL = 0.008;
+  let _rafId = null;
+  let _rippleTimeout = null;
+  let _transitionBusy = false;
 
-    // ── Internal state ────────────────────────────────────────
-    let  _trackIdx      = 0;      // mirrors currentTrackIndex
-    let  _isPlaying     = false;
-    let  _spinAngle     = 0;      // current visual rotation (deg)
-    let  _spinSpeed     = 0;      // current deg/frame
-    const TARGET_SPEED  = 0.45;   // deg/frame at full RPM (≈8s/rev @60fps)
-    const ACCEL         = 0.012;
-    const DECEL         = 0.008;
-    let  _rafId         = null;
-    let  _rippleTimeout = null;
-    let  _transitionBusy = false;
+  const TRACK_META = [
+    { label: "BEACH LO-FI", trackClass: "track-0" },
+    { label: "AVENTURE", trackClass: "track-1" },
+    { label: "PULSEBOX", trackClass: "track-2" },
+  ];
 
-    // Track meta for disc UI
-    const TRACK_META = [
-        { label: 'BEACH LO-FI',  trackClass: 'track-0' },
-        { label: 'AVENTURE',     trackClass: 'track-1' },
-        { label: 'PULSEBOX',     trackClass: 'track-2' },
-    ];
+  function rotateTick() {
+    if (!widget) return;
 
-    // ── Rotation loop ─────────────────────────────────────────
-    function rotateTick() {
-        if (!widget) return;
-
-        if (_isPlaying) {
-            _spinSpeed = Math.min(_spinSpeed + ACCEL, TARGET_SPEED);
-        } else {
-            _spinSpeed = Math.max(_spinSpeed - DECEL, 0);
-        }
-
-        _spinAngle = (_spinAngle + _spinSpeed) % 360;
-        if (discBody) discBody.style.transform = `rotate(${_spinAngle}deg)`;
-
-        // keep loop alive while spinning or decelerating
-        if (_spinSpeed > 0 || _isPlaying) {
-            _rafId = requestAnimationFrame(rotateTick);
-        } else {
-            _rafId = null;
-        }
+    if (_isPlaying) {
+      _spinSpeed = Math.min(_spinSpeed + ACCEL, TARGET_SPEED);
+    } else {
+      _spinSpeed = Math.max(_spinSpeed - DECEL, 0);
     }
 
-    function startLoop() {
-        if (!_rafId) _rafId = requestAnimationFrame(rotateTick);
+    _spinAngle = (_spinAngle + _spinSpeed) % 360;
+    if (discBody) discBody.style.transform = `rotate(${_spinAngle}deg)`;
+
+    if (_spinSpeed > 0 || _isPlaying) {
+      _rafId = requestAnimationFrame(rotateTick);
+    } else {
+      _rafId = null;
+    }
+  }
+
+  function startLoop() {
+    if (!_rafId) _rafId = requestAnimationFrame(rotateTick);
+  }
+
+  function setPlaying(playing) {
+    if (_isPlaying === playing) return;
+    _isPlaying = playing;
+
+    if (widget) {
+      widget.classList.toggle("disc-idle", !playing);
     }
 
-    // ── Play / Pause state ────────────────────────────────────
-    function setPlaying(playing) {
-        if (_isPlaying === playing) return;
-        _isPlaying = playing;
+    startLoop();
+  }
 
-        if (widget) {
-            widget.classList.toggle('disc-idle', !playing);
-        }
-
-        startLoop(); // let loop decelerate if pausing
+  function setTrack(idx) {
+    if (!widget || idx < 0 || idx >= TRACK_META.length) return;
+    if (idx === _trackIdx && !_transitionBusy) {
+      _trackIdx = idx;
+      return;
     }
 
-    // ── Track change ──────────────────────────────────────────
-    function setTrack(idx) {
-        if (!widget || idx < 0 || idx >= TRACK_META.length) return;
-        if (idx === _trackIdx && !_transitionBusy) {
-            _trackIdx = idx;
-            return;
-        }
+    _trackIdx = idx;
+    _transitionBusy = true;
 
-        _trackIdx = idx;
-        _transitionBusy = true;
+    TRACK_META.forEach((_, i) => widget.classList.remove(`track-${i}`));
+    widget.classList.add(TRACK_META[idx].trackClass);
 
-        // 1. Remove old track class, add new
-        TRACK_META.forEach((_, i) => widget.classList.remove(`track-${i}`));
-        widget.classList.add(TRACK_META[idx].trackClass);
-
-        // 2. Update track name label with fade
-        if (discName)  discName.textContent = TRACK_META[idx].label;
-        if (discLabel) {
-            discLabel.classList.remove('disc-label-fade');
-            // Force reflow
-            void discLabel.offsetWidth;
-            discLabel.classList.add('disc-label-fade');
-        }
-
-        // 3. Pulse glow on disc body
-        if (discBody) {
-            discBody.classList.remove('disc-pulse');
-            void discBody.offsetWidth;
-            discBody.classList.add('disc-pulse');
-            discBody.addEventListener('animationend', () => {
-                discBody.classList.remove('disc-pulse');
-                _transitionBusy = false;
-            }, { once: true });
-        }
-
-        // 4. Fire ripple rings
-        fireRipple();
+    if (discName) discName.textContent = TRACK_META[idx].label;
+    if (discLabel) {
+      discLabel.classList.remove("disc-label-fade");
+      void discLabel.offsetWidth;
+      discLabel.classList.add("disc-label-fade");
     }
 
-    function fireRipple() {
-        if (_rippleTimeout) clearTimeout(_rippleTimeout);
-
-        [ripple1, ripple2].forEach(r => {
-            if (!r) return;
-            r.classList.remove('disc-ripple-fire');
-            void r.offsetWidth;
-            r.classList.add('disc-ripple-fire');
-        });
-
-        // Clean up class after animation
-        _rippleTimeout = setTimeout(() => {
-            [ripple1, ripple2].forEach(r => r?.classList.remove('disc-ripple-fire'));
-        }, 1200);
+    if (discBody) {
+      discBody.classList.remove("disc-pulse");
+      void discBody.offsetWidth;
+      discBody.classList.add("disc-pulse");
+      discBody.addEventListener(
+        "animationend",
+        () => {
+          discBody.classList.remove("disc-pulse");
+          _transitionBusy = false;
+        },
+        { once: true },
+      );
     }
 
-    // ── Visibility (show/hide per screen) ─────────────────────
-    function setVisible(visible) {
-        if (!widget) return;
-        widget.classList.toggle('disc-hidden', !visible);
+    fireRipple();
+  }
+
+  function fireRipple() {
+    if (_rippleTimeout) clearTimeout(_rippleTimeout);
+
+    [ripple1, ripple2].forEach((r) => {
+      if (!r) return;
+      r.classList.remove("disc-ripple-fire");
+      void r.offsetWidth;
+      r.classList.add("disc-ripple-fire");
+    });
+
+    _rippleTimeout = setTimeout(() => {
+      [ripple1, ripple2].forEach((r) =>
+        r?.classList.remove("disc-ripple-fire"),
+      );
+    }, 1200);
+  }
+
+  function setVisible(visible) {
+    if (!widget) return;
+    widget.classList.toggle("disc-hidden", !visible);
+  }
+
+  function sync() {
+    const bgMusic = document.getElementById("bg-music");
+    if (!bgMusic || !widget) return;
+
+    const isActuallyPlaying =
+      !bgMusic.paused && !bgMusic.ended && bgMusic.currentTime > 0;
+    setPlaying(isActuallyPlaying);
+  }
+
+  function observeScreens() {
+    const allScreens = document.querySelectorAll(".ui-container");
+    allScreens.forEach((s) => {
+      const observer = new MutationObserver(() => {
+        setVisible(true);
+      });
+      observer.observe(s, { attributes: true, attributeFilter: ["class"] });
+    });
+  }
+
+  function onDiscClick() {
+    if (typeof AudioManager !== "undefined") {
+      AudioManager.toggleBGM();
     }
+  }
 
-    // ── Sync with AudioManager (called from audio polling) ────
-    function sync() {
-        const bgMusic = document.getElementById('bg-music');
-        if (!bgMusic || !widget) return;
+  function init() {
+    if (!widget) return;
+    widget.classList.add("track-0");
+    widget.classList.add("disc-idle");
+    widget.addEventListener("click", onDiscClick);
+    setInterval(sync, 250);
+    observeScreens();
+    setVisible(false);
+  }
 
-        const isActuallyPlaying = !bgMusic.paused && !bgMusic.ended && bgMusic.currentTime > 0;
-        setPlaying(isActuallyPlaying);
-    }
-
-    // ── Screen visibility watcher ─────────────────────────────
-    function observeScreens() {
-        // Show disc on most screens; hide on turn/difficulty/game (optional)
-        // Currently: always visible once game window is active
-        const allScreens = document.querySelectorAll('.ui-container');
-        allScreens.forEach(s => {
-            const observer = new MutationObserver(() => {
-                // Always show disc when game window is active
-                setVisible(true);
-            });
-            observer.observe(s, { attributes: true, attributeFilter: ['class'] });
-        });
-    }
-
-    // ── Click interaction: toggle BGM ─────────────────────────
-    function onDiscClick() {
-        if (typeof AudioManager !== 'undefined') {
-            AudioManager.toggleBGM();
-        }
-    }
-
-    // ── Init ──────────────────────────────────────────────────
-    function init() {
-        if (!widget) return;
-
-        // Set initial track theme
-        widget.classList.add('track-0');
-        widget.classList.add('disc-idle');
-
-        // Click to toggle music
-        widget.addEventListener('click', onDiscClick);
-
-        // Poll audio state every 250ms (matches old vinyl logic)
-        setInterval(sync, 250);
-
-        // Observe screen transitions
-        observeScreens();
-
-        // Hide on splash, show after enter
-        setVisible(false);
-    }
-
-    return { init, setTrack, setPlaying, setVisible, sync, fireRipple };
+  return { init, setTrack, setPlaying, setVisible, sync, fireRipple };
 })();
 
-// ── Hook into AudioManager.selectTrack ───────────────────────
-// Wrap selectTrack to also notify MusicDisc
 (function patchAudioManager() {
-    const checkReady = setInterval(() => {
-        if (typeof AudioManager === 'undefined') return;
-        clearInterval(checkReady);
+  const checkReady = setInterval(() => {
+    if (typeof AudioManager === "undefined") return;
+    clearInterval(checkReady);
 
-        const _origSelect = AudioManager.selectTrack.bind(AudioManager);
-        AudioManager.selectTrack = function(idx, playSfx = true) {
-            _origSelect(idx, playSfx);
-            MusicDisc.setTrack(idx);
-        };
-    }, 50);
+    const _origSelect = AudioManager.selectTrack.bind(AudioManager);
+    AudioManager.selectTrack = function (idx, playSfx = true) {
+      _origSelect(idx, playSfx);
+      MusicDisc.setTrack(idx);
+    };
+  }, 50);
 })();
 
-// ── Show disc after user enters game (enterGame hook) ────────
-const _origEnterGame = typeof enterGame !== 'undefined' ? enterGame : null;
-// We'll patch enterGame after DOMContentLoaded since it's defined later in script
-document.addEventListener('DOMContentLoaded', () => {
-    MusicDisc.init();
-
-    // Patch enterGame to show disc
-    const _nativeEnter = window.enterGame;
-    if (typeof _nativeEnter === 'function') {
-        window.enterGame = function() {
-            _nativeEnter();
-            MusicDisc.setVisible(true);
-        };
-    }
+document.addEventListener("DOMContentLoaded", () => {
+  MusicDisc.init();
+  const _nativeEnter = window.enterGame;
+  if (typeof _nativeEnter === "function") {
+    window.enterGame = function () {
+      _nativeEnter();
+      MusicDisc.setVisible(true);
+    };
+  }
 });
 
-// Fallback: also listen for splash click to reveal disc
-document.addEventListener('click', function revealOnce(e) {
-    const splash = document.getElementById('splash-screen');
-    if (splash && (splash.style.display === 'none' || splash.classList.contains('hidden') || splash.style.opacity === '0')) {
-        MusicDisc.setVisible(true);
-        document.removeEventListener('click', revealOnce);
+document.addEventListener(
+  "click",
+  function revealOnce(e) {
+    const splash = document.getElementById("splash-screen");
+    if (
+      splash &&
+      (splash.style.display === "none" ||
+        splash.classList.contains("hidden") ||
+        splash.style.opacity === "0")
+    ) {
+      MusicDisc.setVisible(true);
+      document.removeEventListener("click", revealOnce);
     }
-}, { capture: true });
+  },
+  { capture: true },
+);
 
-// Also reveal after 100ms if splash is gone
 setInterval(() => {
-    const splash = document.getElementById('splash-screen');
-    if (splash && splash.style.display === 'none') {
-        MusicDisc.setVisible(true);
-    }
+  const splash = document.getElementById("splash-screen");
+  if (splash && splash.style.display === "none") {
+    MusicDisc.setVisible(true);
+  }
 }, 300);
