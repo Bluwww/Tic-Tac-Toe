@@ -1,3 +1,28 @@
+// ============================================================
+//  CRAZYGAMES SDK WRAPPER
+// ============================================================
+let isCGInitialized = false;
+
+window.addEventListener("load", async () => {
+  if (window.CrazyGames && window.CrazyGames.SDK) {
+    try {
+      await window.CrazyGames.SDK.init();
+      isCGInitialized = true;
+      console.log("CrazyGames SDK Initialized");
+    } catch (e) {
+      console.error("Failed to init CrazyGames SDK", e);
+    }
+  }
+});
+
+function cgGameplayStart() {
+  if (isCGInitialized) window.CrazyGames.SDK.game.gameplayStart();
+}
+
+function cgGameplayStop() {
+  if (isCGInitialized) window.CrazyGames.SDK.game.gameplayStop();
+}
+
 /* ============================================================
    WAFFLE SKIN ASSETS (Medium Detail SVGs)
    ============================================================ */
@@ -149,6 +174,16 @@ const SoundEngine = (() => {
     if (ctx.state === "suspended") ctx.resume();
     return ctx;
   }
+
+  // --- TAMBAHAN WAJIB CRAZYGAMES UNTUK iOS ---
+  function resumeOnInteraction() {
+    if (ctx && ctx.state === "suspended") {
+      ctx.resume();
+    }
+  }
+  document.addEventListener("touchend", resumeOnInteraction, { passive: true });
+  document.addEventListener("click", resumeOnInteraction, { passive: true });
+  // --------------------------------------------
 
   function playTone({
     freq = 440,
@@ -610,7 +645,7 @@ let _prevScreen = "lobby-screen";
 // Variabel Timer & Lock untuk Banner Turn
 let bannerHoldTimer = null;
 let bannerSafetyTimer = null;
-let isTurnLocked = false; // <-- VARIABLE BARU untuk melock papan
+let isTurnLocked = false;
 
 function showScreen(screenId) {
   SoundEngine.menuClick();
@@ -882,7 +917,7 @@ function startRound() {
   board = Array(currentSize * currentSize).fill(null);
   prevBoard = Array(currentSize * currentSize).fill(null);
   gameActive = true;
-  isTurnLocked = false; // Reset lock saat round baru dimulai
+  isTurnLocked = false;
 
   if (gameMode === "local") {
     isPlayerTurn = firstTurnChoice !== "Player2";
@@ -903,6 +938,9 @@ function startRound() {
       document.getElementById("round-status").className = "";
     }
   }
+
+  // CRAZYGAMES: Panggil event start saat ronde benar-benar dimulai
+  cgGameplayStart();
 }
 
 function renderBoard() {
@@ -1022,6 +1060,9 @@ function botMove() {
 }
 
 function endRound(winner) {
+  // CRAZYGAMES: Panggil event stop saat ronde selesai
+  cgGameplayStop();
+
   gameActive = false;
   const rs = document.getElementById("round-status");
 
@@ -1137,7 +1178,6 @@ function updateLocalStatus() {
   }
 }
 
-// ── Cinematic turn banner (DENGAN LOCK) ────────────────────────
 function showTurnBanner(text) {
   const banner = document.getElementById("turn-banner");
   const inner = document.getElementById("turn-banner-inner");
@@ -1161,7 +1201,6 @@ function showTurnBanner(text) {
 
   inner.classList.add("banner-enter");
 
-  // Notifikasi muncul lalu ditahan selama 1 detik (1000ms), lalu mulai hilang
   bannerHoldTimer = setTimeout(() => {
     inner.classList.remove("banner-enter");
     inner.classList.add("banner-exit");
@@ -1177,7 +1216,6 @@ function showTurnBanner(text) {
     );
   }, 1000);
 
-  // Pengaman jika animasi tidak berjalan sempurna (1.8 detik total durasi)
   bannerSafetyTimer = setTimeout(() => {
     banner.classList.add("hidden");
     inner.classList.remove("banner-enter", "banner-exit");

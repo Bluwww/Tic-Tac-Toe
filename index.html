@@ -6,6 +6,9 @@
     <title>Minimax Tic Tac Toe</title>
     <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500&family=Montserrat:wght@300;400;500&family=Playfair+Display:ital@1&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://sdk.crazygames.com/crazygames-sdk-v3.js"></script>
+    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -243,9 +246,6 @@
             </button>
         </div>
 
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!--  MODE SELECTION — VS BOT / 2 PLAYER LOCAL              -->
-        <!-- ═══════════════════════════════════════════════════════ -->
         <div id="mode-screen" class="ui-container hidden">
             <div class="text-section">
                 <div class="minimax" style="font-size:50px;">BATTLE MODE</div>
@@ -306,9 +306,6 @@
             </button>
         </div>
 
-        <!-- ═══════════════════════════════════════════════════════ -->
-        <!--  INITIATIVE — 2 PLAYER LOCAL FIRST TURN               -->
-        <!-- ═══════════════════════════════════════════════════════ -->
         <div id="turn-screen-local" class="ui-container hidden">
             <div class="text-section">
                 <div class="minimax" style="font-size:50px;">INITIATIVE</div>
@@ -353,7 +350,6 @@
             </div>
         </div>
 
-        <!-- CINEMATIC TURN BANNER — 2 PLAYER MODE -->
         <div id="turn-banner" class="turn-banner hidden">
             <div class="turn-banner-inner" id="turn-banner-inner">
                 <div class="turn-banner-pip" id="turn-banner-pip"></div>
@@ -379,20 +375,15 @@
             </div>
         </div>
 
-        <!-- MUSIC DISC WIDGET — Premium Vinyl Player -->
         <div id="music-disc-widget" class="music-disc-widget">
 
-            <!-- Pulse / ripple rings (animate on track change) -->
             <div class="disc-ripple disc-ripple--1"></div>
             <div class="disc-ripple disc-ripple--2"></div>
 
-            <!-- Glow aura behind disc -->
             <div class="disc-aura" id="disc-aura"></div>
 
-            <!-- Vinyl disc body -->
             <div id="disc-body" class="disc-body">
 
-                <!-- Groove rings (decorative) -->
                 <div class="disc-grooves">
                     <div class="groove groove-1"></div>
                     <div class="groove groove-2"></div>
@@ -400,10 +391,8 @@
                     <div class="groove groove-4"></div>
                 </div>
 
-                <!-- Reflection shimmer overlay -->
                 <div class="disc-reflection"></div>
 
-                <!-- Center label area -->
                 <div class="disc-label" id="disc-label">
                     <div class="disc-label-inner">
                         <div class="disc-track-name" id="disc-track-name">BEACH LO-FI</div>
@@ -413,10 +402,8 @@
 
             </div>
 
-            <!-- Floating music note (idle state indicator) -->
             <div class="disc-idle-note" id="disc-idle-note">♪</div>
 
-            <!-- Tonearm -->
             <div class="disc-tonearm" id="disc-tonearm">
                 <div class="disc-tonearm-head"></div>
             </div>
