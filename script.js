@@ -560,6 +560,7 @@ const AudioManager = (() => {
       if (s) s.value = bgmEnabled ? bgmVolume : 0;
       const v = document.getElementById("bgm-val");
       if (v) v.textContent = bgmEnabled ? bgmVolume : 0;
+      syncToggleUI();
       return bgmEnabled;
     },
     toggleSFX() {
@@ -570,6 +571,7 @@ const AudioManager = (() => {
       if (s) s.value = sfxVolume;
       const v = document.getElementById("sfx-val");
       if (v) v.textContent = sfxVolume;
+      syncToggleUI();
       return sfxEnabled;
     },
     resetDefaults() {
@@ -672,6 +674,8 @@ const WinningFX = (() => {
     // Remove any existing line
     const old = boardEl.querySelector('#win-line-svg');
     if (old) old.remove();
+    const oldGlow = boardEl.querySelector('#win-line-glow-svg');
+    if (oldGlow) oldGlow.remove();
 
     const cells = winResult.cells;
     const firstIdx = cells[0];
@@ -688,11 +692,20 @@ const WinningFX = (() => {
     const H = boardEl.offsetHeight;
 
     const NS = 'http://www.w3.org/2000/svg';
-    const svg = document.createElementNS(NS, 'svg');
-    svg.id = 'win-line-svg';
-    svg.setAttribute('width',  W);
-    svg.setAttribute('height', H);
-    svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:25;overflow:visible;';
+    
+    // ── Create Glow SVG (placed behind cells, z-index: 4) ──
+    const svgGlow = document.createElementNS(NS, 'svg');
+    svgGlow.id = 'win-line-glow-svg';
+    svgGlow.setAttribute('width',  W);
+    svgGlow.setAttribute('height', H);
+    svgGlow.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:4;overflow:visible;';
+
+    // ── Create Crisp SVG (placed on top of cells, z-index: 25) ──
+    const svgMain = document.createElementNS(NS, 'svg');
+    svgMain.id = 'win-line-svg';
+    svgMain.setAttribute('width',  W);
+    svgMain.setAttribute('height', H);
+    svgMain.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:25;overflow:visible;';
 
     const dx = end.x - start.x, dy = end.y - start.y;
     const lineLen = Math.sqrt(dx*dx + dy*dy);
@@ -729,13 +742,15 @@ const WinningFX = (() => {
     const dotA = mkDot(start.x, start.y);
     const dotB = mkDot(end.x,   end.y);
 
-    svg.appendChild(glowLine);
-    svg.appendChild(mainLine);
-    svg.appendChild(dotA);
-    svg.appendChild(dotB);
+    svgGlow.appendChild(glowLine);
+    
+    svgMain.appendChild(mainLine);
+    svgMain.appendChild(dotA);
+    svgMain.appendChild(dotB);
 
     boardEl.style.position = 'relative';
-    boardEl.appendChild(svg);
+    boardEl.appendChild(svgGlow);
+    boardEl.appendChild(svgMain);
 
     // ── Animate: draw line ──
     requestAnimationFrame(() => {
@@ -814,6 +829,9 @@ const WinningFX = (() => {
 
     const svg = boardEl.querySelector('#win-line-svg');
     if (svg) svg.remove();
+
+    const svgGlow = boardEl.querySelector('#win-line-glow-svg');
+    if (svgGlow) svgGlow.remove();
 
     const overlay = boardEl.querySelector('#board-win-overlay');
     if (overlay) {
