@@ -624,6 +624,211 @@ function toggleAudio(type) {
 }
 
 // ============================================================
+//  WINNING FX ENGINE — Cinematic Line + Glow + Dim
+// ============================================================
+const WinningFX = (() => {
+  let _shakeTimer = null;
+  let _clearTimer = null;
+
+  // Skin-adaptive line color
+  function _lineColor() {
+    if (currentSkin === 'neon')   return '#00ffff';
+    if (currentSkin === 'waffle') return '#f4d35e';
+    return 'rgba(255,255,255,0.92)';
+  }
+  function _glowColor() {
+    if (currentSkin === 'neon')   return 'rgba(0,255,255,0.55)';
+    if (currentSkin === 'waffle') return 'rgba(244,211,94,0.55)';
+    return 'rgba(255,255,255,0.38)';
+  }
+  function _glowWidth() {
+    if (currentSkin === 'neon')   return 22;
+    if (currentSkin === 'waffle') return 18;
+    return 16;
+  }
+
+  // Get cell center coords relative to board element
+  function _cellCenter(idx, boardEl) {
+    const cells = boardEl.querySelectorAll('.cell');
+    const cell = cells[idx];
+    if (!cell) return null;
+    return {
+      x: cell.offsetLeft + cell.offsetWidth  / 2,
+      y: cell.offsetTop  + cell.offsetHeight / 2
+    };
+  }
+
+  // Extend line slightly beyond first/last cell for polish
+  function _extendPoint(from, to, extra = 0.08) {
+    const dx = to.x - from.x, dy = to.y - from.y;
+    const len = Math.sqrt(dx*dx + dy*dy) || 1;
+    return {
+      x: from.x - dx/len * (extra * len),
+      y: from.y - dy/len * (extra * len)
+    };
+  }
+
+  function _drawLine(winResult, boardEl) {
+    // Remove any existing line
+    const old = boardEl.querySelector('#win-line-svg');
+    if (old) old.remove();
+
+    const cells = winResult.cells;
+    const firstIdx = cells[0];
+    const lastIdx  = cells[cells.length - 1];
+
+    const rawStart = _cellCenter(firstIdx, boardEl);
+    const rawEnd   = _cellCenter(lastIdx,  boardEl);
+    if (!rawStart || !rawEnd) return;
+
+    const start = _extendPoint(rawEnd,  rawStart, 0.06);
+    const end   = _extendPoint(rawStart, rawEnd,  0.06);
+
+    const W = boardEl.offsetWidth;
+    const H = boardEl.offsetHeight;
+
+    const NS = 'http://www.w3.org/2000/svg';
+    const svg = document.createElementNS(NS, 'svg');
+    svg.id = 'win-line-svg';
+    svg.setAttribute('width',  W);
+    svg.setAttribute('height', H);
+    svg.style.cssText = 'position:absolute;top:0;left:0;pointer-events:none;z-index:25;overflow:visible;';
+
+    const dx = end.x - start.x, dy = end.y - start.y;
+    const lineLen = Math.sqrt(dx*dx + dy*dy);
+
+    // ── Glow layer (thick, blurred) ──
+    const glowLine = document.createElementNS(NS, 'line');
+    glowLine.setAttribute('x1', start.x); glowLine.setAttribute('y1', start.y);
+    glowLine.setAttribute('x2', end.x);   glowLine.setAttribute('y2', end.y);
+    glowLine.setAttribute('stroke', _glowColor());
+    glowLine.setAttribute('stroke-width', _glowWidth());
+    glowLine.setAttribute('stroke-linecap', 'round');
+    glowLine.style.filter  = 'blur(7px)';
+    glowLine.style.opacity = '0';
+
+    // ── Main crisp line ──
+    const mainLine = document.createElementNS(NS, 'line');
+    mainLine.setAttribute('x1', start.x); mainLine.setAttribute('y1', start.y);
+    mainLine.setAttribute('x2', end.x);   mainLine.setAttribute('y2', end.y);
+    mainLine.setAttribute('stroke', _lineColor());
+    mainLine.setAttribute('stroke-width', currentSize >= 6 ? 2.5 : 3);
+    mainLine.setAttribute('stroke-linecap', 'round');
+    mainLine.style.strokeDasharray  = lineLen;
+    mainLine.style.strokeDashoffset = lineLen;
+
+    // ── Cap dots ──
+    const mkDot = (x, y) => {
+      const c = document.createElementNS(NS, 'circle');
+      c.setAttribute('cx', x); c.setAttribute('cy', y);
+      c.setAttribute('r', currentSize >= 6 ? 3.5 : 5);
+      c.setAttribute('fill', _lineColor());
+      c.style.opacity = '0';
+      return c;
+    };
+    const dotA = mkDot(start.x, start.y);
+    const dotB = mkDot(end.x,   end.y);
+
+    svg.appendChild(glowLine);
+    svg.appendChild(mainLine);
+    svg.appendChild(dotA);
+    svg.appendChild(dotB);
+
+    boardEl.style.position = 'relative';
+    boardEl.appendChild(svg);
+
+    // ── Animate: draw line ──
+    requestAnimationFrame(() => {
+      dotA.style.transition = 'opacity 0.18s ease';
+      dotA.style.opacity = '1';
+
+      setTimeout(() => {
+        mainLine.style.transition = 'stroke-dashoffset 0.55s cubic-bezier(0.25, 0.46, 0.45, 0.94)';
+        mainLine.style.strokeDashoffset = '0';
+
+        glowLine.style.transition = 'opacity 0.3s ease 0.1s';
+        glowLine.style.opacity = '0.75';
+      }, 30);
+
+      setTimeout(() => {
+        dotB.style.transition = 'opacity 0.18s ease';
+        dotB.style.opacity = '1';
+      }, 520);
+
+      // ── Pulse after draw complete ──
+      setTimeout(() => {
+        glowLine.style.transition = 'opacity 0.55s ease';
+        glowLine.style.opacity = '0.35';
+        setTimeout(() => {
+          if (glowLine.parentNode) {
+            glowLine.style.opacity = '0.9';
+          }
+        }, 300);
+      }, 700);
+    });
+  }
+
+  function play(winResult) {
+    if (!winResult || !winResult.cells || !winResult.cells.length) return;
+
+    const boardEl = document.getElementById('board');
+    if (!boardEl) return;
+
+    // ── 1. Highlight winning / dim losing cells ──
+    const allCells = boardEl.querySelectorAll('.cell');
+    allCells.forEach((cell, i) => {
+      cell.classList.remove('winning-cell', 'losing-cell');
+      if (winResult.cells.includes(i)) {
+        // Stagger the winning cell entrance
+        const delay = winResult.cells.indexOf(i) * 60;
+        setTimeout(() => cell.classList.add('winning-cell'), delay + 120);
+      } else {
+        cell.classList.add('losing-cell');
+      }
+    });
+
+    // ── 2. Board win glow state ──
+    boardEl.classList.add('board-win');
+
+    // ── 3. Draw the line ──
+    _drawLine(winResult, boardEl);
+
+    // ── 4. Vignette overlay ──
+    let overlay = boardEl.querySelector('#board-win-overlay');
+    if (!overlay) {
+      overlay = document.createElement('div');
+      overlay.id = 'board-win-overlay';
+      boardEl.appendChild(overlay);
+    }
+    setTimeout(() => overlay.classList.add('active'), 200);
+  }
+
+  function clear() {
+    if (_shakeTimer) { clearTimeout(_shakeTimer); _shakeTimer = null; }
+    if (_clearTimer) { clearTimeout(_clearTimer); _clearTimer = null; }
+
+    const boardEl = document.getElementById('board');
+    if (!boardEl) return;
+
+    boardEl.classList.remove('board-win');
+
+    const svg = boardEl.querySelector('#win-line-svg');
+    if (svg) svg.remove();
+
+    const overlay = boardEl.querySelector('#board-win-overlay');
+    if (overlay) {
+      overlay.classList.remove('active');
+    }
+
+    boardEl.querySelectorAll('.cell').forEach(cell => {
+      cell.classList.remove('winning-cell', 'losing-cell');
+    });
+  }
+
+  return { play, clear };
+})();
+
+// ============================================================
 //  GAME STATE
 // ============================================================
 let currentSize = 3;
@@ -639,6 +844,7 @@ let board = [],
   bScore = 0,
   isPlayerTurn = true,
   gameActive = false;
+let lastWinResult = null;
 let prevBoard = [];
 let _prevScreen = "lobby-screen";
 
@@ -959,6 +1165,7 @@ function setFirstTurnLocal(choice) {
 }
 
 function startRound() {
+  WinningFX.clear();
   board = Array(currentSize * currentSize).fill(null);
   prevBoard = Array(currentSize * currentSize).fill(null);
   gameActive = true;
@@ -1043,7 +1250,8 @@ function handlePlayerMove(index) {
     board[index] = piece;
     SoundEngine.playerPlace();
     renderBoard();
-    if (checkWin(piece)) return endRound(piece);
+    const wr = checkWin(piece);
+    if (wr) { lastWinResult = wr; return endRound(piece); }
     if (board.every((cell) => cell !== null)) return endRound("DRAW");
 
     isPlayerTurn = !isPlayerTurn;
@@ -1057,7 +1265,8 @@ function handlePlayerMove(index) {
     board[index] = "X";
     SoundEngine.playerPlace();
     renderBoard();
-    if (checkWin("X")) return endRound("X");
+    const wr = checkWin("X");
+    if (wr) { lastWinResult = wr; return endRound("X"); }
     if (board.every((cell) => cell !== null)) return endRound("DRAW");
     isPlayerTurn = false;
     document.getElementById("round-status").innerText = "Bot is thinking...";
@@ -1096,7 +1305,8 @@ function botMove() {
   board[bestMove] = "O";
   SoundEngine.botPlace();
   renderBoard();
-  if (checkWin("O")) return endRound("O");
+  const wrO = checkWin("O");
+  if (wrO) { lastWinResult = wrO; return endRound("O"); }
   if (board.every((cell) => cell !== null)) return endRound("DRAW");
   isPlayerTurn = true;
   const rs = document.getElementById("round-status");
@@ -1148,10 +1358,45 @@ function endRound(winner) {
   updateScoreboardActiveTurn(null);
   updateScoreboard();
 
-  if (pScore === 3 || bScore === 3) {
-    setTimeout(() => endMatch(pScore === 3 ? "PLAYER" : "BOT"), 1000);
+  const isMatchOver = pScore === 3 || bScore === 3;
+  const savedWinResult = lastWinResult;
+  lastWinResult = null;
+
+  if (winner !== "DRAW" && savedWinResult) {
+    // ── CINEMATIC WIN SEQUENCE ──────────────────────────────
+    // Phase 1 (t=0): draw line + dim losing cells
+    WinningFX.play(savedWinResult);
+
+    // Phase 2 (t=700ms): camera shake
+    setTimeout(() => {
+      const wrapper = document.querySelector(".gameplay-wrapper");
+      if (wrapper) {
+        wrapper.classList.remove("board-shake");
+        void wrapper.offsetWidth;
+        wrapper.classList.add("board-shake");
+        wrapper.addEventListener("animationend",
+          () => wrapper.classList.remove("board-shake"), { once: true });
+      }
+    }, 700);
+
+    if (isMatchOver) {
+      // Phase 3 (t=1100ms): confetti burst
+      // Phase 4 (t=2000ms): transition to result
+      setTimeout(() => endMatch(pScore === 3 ? "PLAYER" : "BOT"), 2000);
+    } else {
+      // t=1900ms: clear FX + next round
+      setTimeout(() => {
+        WinningFX.clear();
+        startRound();
+      }, 1900);
+    }
   } else {
-    setTimeout(startRound, 1500);
+    // DRAW — no winning FX
+    if (isMatchOver) {
+      setTimeout(() => endMatch(pScore === 3 ? "PLAYER" : "BOT"), 1000);
+    } else {
+      setTimeout(startRound, 1500);
+    }
   }
 }
 
@@ -1167,19 +1412,24 @@ function endMatch(winner) {
       wintxt.style.color = "#3498db";
     }
     SoundEngine.matchWin();
-    setTimeout(() => ConfettiEngine.start(4500), 300);
+    ConfettiEngine.start(4500);
   } else {
     wintxt.innerText = winner === "PLAYER" ? "YOU WIN!" : "YOU LOSE";
     wintxt.style.color = winner === "PLAYER" ? "#2ecc71" : "#e74c3c";
     if (winner === "PLAYER") {
       SoundEngine.matchWin();
-      setTimeout(() => ConfettiEngine.start(4500), 300);
+      ConfettiEngine.start(4500);
     } else {
       SoundEngine.matchLose();
       ConfettiEngine.stop();
     }
   }
-  showScreen("result-screen");
+
+  // Short cinematic pause before result screen fades in
+  setTimeout(() => {
+    WinningFX.clear();
+    showScreen("result-screen");
+  }, 700);
 }
 
 function updateScoreboard() {
@@ -1269,29 +1519,42 @@ function showTurnBanner(text) {
 }
 
 // ============================================================
-//  WIN DETECTION
+//  WIN DETECTION — returns { winner, cells, direction } or null
 // ============================================================
 function checkWin(player) {
-  const s = currentSize,
-    w = winCondition;
+  const s = currentSize, w = winCondition;
   for (let r = 0; r < s; r++) {
     for (let c = 0; c < s; c++) {
-      if (c <= s - w && checkDirection(r, c, 0, 1, player, w, s)) return true;
-      if (r <= s - w && checkDirection(r, c, 1, 0, player, w, s)) return true;
-      if (r <= s - w && c <= s - w && checkDirection(r, c, 1, 1, player, w, s))
-        return true;
-      if (r <= s - w && c >= w - 1 && checkDirection(r, c, 1, -1, player, w, s))
-        return true;
+      let cells;
+      if (c <= s - w) {
+        cells = checkDirection(r, c, 0, 1, player, w, s);
+        if (cells) return { winner: player, cells, direction: 'horizontal' };
+      }
+      if (r <= s - w) {
+        cells = checkDirection(r, c, 1, 0, player, w, s);
+        if (cells) return { winner: player, cells, direction: 'vertical' };
+      }
+      if (r <= s - w && c <= s - w) {
+        cells = checkDirection(r, c, 1, 1, player, w, s);
+        if (cells) return { winner: player, cells, direction: 'diagonal-main' };
+      }
+      if (r <= s - w && c >= w - 1) {
+        cells = checkDirection(r, c, 1, -1, player, w, s);
+        if (cells) return { winner: player, cells, direction: 'diagonal-anti' };
+      }
     }
   }
-  return false;
+  return null;
 }
 
 function checkDirection(r, c, rDir, cDir, player, winCond, size) {
+  const cells = [];
   for (let i = 0; i < winCond; i++) {
-    if (board[(r + i * rDir) * size + (c + i * cDir)] !== player) return false;
+    const idx = (r + i * rDir) * size + (c + i * cDir);
+    if (board[idx] !== player) return null;
+    cells.push(idx);
   }
-  return true;
+  return cells;
 }
 
 function getRandomMove() {
