@@ -642,6 +642,14 @@ let board = [],
 let prevBoard = [];
 let _prevScreen = "lobby-screen";
 
+// ============================================================
+//  CREDITS SCREEN — SPAM-SAFE NAVIGATION GUARD
+//  Fix: prevent _prevScreen corruption + anti-spam cooldown
+// ============================================================
+let _creditsIsOpen = false;
+let _creditsLastOpenTime = 0;
+const CREDITS_COOLDOWN_MS = 300;
+
 // Variabel Timer & Lock untuk Banner Turn
 let bannerHoldTimer = null;
 let bannerSafetyTimer = null;
@@ -649,8 +657,21 @@ let isTurnLocked = false;
 
 function showScreen(screenId) {
   SoundEngine.menuClick();
-  const active = document.querySelector(".ui-container:not(.hidden)");
-  if (active && screenId === "credits-screen") _prevScreen = active.id;
+
+  // FIX: Only snapshot _prevScreen when navigating TO credits,
+  // AND only if the currently active screen is NOT credits itself.
+  // This prevents _prevScreen from being overwritten to "credits-screen"
+  // on rapid/duplicate calls, which would make BACK point back to credits.
+  if (screenId === "credits-screen") {
+    const active = document.querySelector(".ui-container:not(.hidden)");
+    if (active && active.id !== "credits-screen") {
+      _prevScreen = active.id;
+    }
+    // If active is already credits-screen, we silently bail — do not
+    // re-navigate, do not corrupt _prevScreen.
+    if (active && active.id === "credits-screen") return;
+  }
+
   if (screenId !== "result-screen") ConfettiEngine.stop();
   document
     .querySelectorAll(".ui-container")
@@ -667,10 +688,34 @@ function showScreen(screenId) {
 }
 
 function openCredits() {
+  const now = Date.now();
+
+  // Guard 1: Credits already open — ignore all subsequent clicks
+  if (_creditsIsOpen) return;
+
+  // Guard 2: Anti-spam cooldown (~300 ms) — absorbs rapid double-taps
+  if (now - _creditsLastOpenTime < CREDITS_COOLDOWN_MS) return;
+
+  _creditsIsOpen = true;
+  _creditsLastOpenTime = now;
+
   showScreen("credits-screen");
 }
+
 function closeCredits() {
-  showScreen(_prevScreen);
+  // Guard: Only allow close if credits is actually open
+  if (!_creditsIsOpen) return;
+
+  _creditsIsOpen = false;
+
+  // Safety fallback: if _prevScreen is somehow still "credits-screen"
+  // (e.g. first-ever open before any screen was shown), default to lobby.
+  const target =
+    _prevScreen && _prevScreen !== "credits-screen"
+      ? _prevScreen
+      : "lobby-screen";
+
+  showScreen(target);
 }
 
 function syncHighlights() {
