@@ -882,30 +882,24 @@ let isTurnLocked = false;
 function showScreen(screenId) {
   SoundEngine.menuClick();
 
-  // Credits screen no longer uses .ui-container — handle separately
-  const creditsEl = document.getElementById("credits-screen");
-
+  // FIX: Only snapshot _prevScreen when navigating TO credits,
+  // AND only if the currently active screen is NOT credits itself.
+  // This prevents _prevScreen from being overwritten to "credits-screen"
+  // on rapid/duplicate calls, which would make BACK point back to credits.
   if (screenId === "credits-screen") {
-    // Snapshot the currently active ui-container screen before opening credits
     const active = document.querySelector(".ui-container:not(.hidden)");
     if (active && active.id !== "credits-screen") {
       _prevScreen = active.id;
     }
-    // Already open — bail
-    if (!creditsEl.classList.contains("hidden")) return;
+    // If active is already credits-screen, we silently bail — do not
+    // re-navigate, do not corrupt _prevScreen.
+    if (active && active.id === "credits-screen") return;
   }
 
   if (screenId !== "result-screen") ConfettiEngine.stop();
-
-  // Hide all regular screens
   document
     .querySelectorAll(".ui-container")
     .forEach((el) => el.classList.add("hidden"));
-
-  // Always hide credits when navigating to any other screen
-  creditsEl.classList.add("hidden");
-
-  // Show the target screen
   document.getElementById(screenId).classList.remove("hidden");
 
   const videoBg = document.getElementById("bg-video");
@@ -1081,23 +1075,22 @@ function setPreviewSize(size) {
   renderPreview();
 }
 
+// ----------------------------------------------------
+// UPDATE: Membuat render preview responsif dengan CSS
+// ----------------------------------------------------
 function renderPreview() {
   const previewEl = document.getElementById("preview-board");
   if (!previewEl) return;
 
   previewEl.innerHTML = "";
-  previewEl.className = "board skin-" + currentSkin;
+  previewEl.className = "board skin-" + currentSkin + " size-" + previewSize;
 
-  const maxPreview = 320;
-  const cellSize = Math.floor(maxPreview / previewSize);
-
-  previewEl.style.gridTemplateColumns = `repeat(${previewSize}, ${cellSize}px)`;
-  previewEl.style.gridTemplateRows = `repeat(${previewSize}, ${cellSize}px)`;
+  previewEl.style.gridTemplateColumns = `repeat(${previewSize}, 1fr)`;
+  previewEl.style.gridTemplateRows = `repeat(${previewSize}, 1fr)`;
 
   for (let i = 0; i < previewSize * previewSize; i++) {
     const cell = document.createElement("div");
     cell.className = "cell";
-    cell.style.fontSize = `${Math.floor(cellSize * 0.6)}px`;
 
     let piece = null;
     if (i === 0 || i === previewSize + 2 || i === previewSize * 2 + 1)
@@ -1219,21 +1212,21 @@ function startRound() {
   cgGameplayStart();
 }
 
+// ----------------------------------------------------
+// UPDATE: Membuat render board responsif dengan CSS
+// ----------------------------------------------------
 function renderBoard() {
   const boardEl = document.getElementById("board");
   boardEl.innerHTML = "";
   boardEl.classList.remove("skin-default", "skin-neon", "skin-waffle");
-  boardEl.classList.add("skin-" + currentSkin);
+  boardEl.classList.add("skin-" + currentSkin, "size-" + currentSize);
 
-  const maxBoardSize = 450;
-  const cellSize = Math.floor(maxBoardSize / currentSize);
-  boardEl.style.gridTemplateColumns = `repeat(${currentSize}, ${cellSize}px)`;
-  boardEl.style.gridTemplateRows = `repeat(${currentSize}, ${cellSize}px)`;
+  boardEl.style.gridTemplateColumns = `repeat(${currentSize}, 1fr)`;
+  boardEl.style.gridTemplateRows = `repeat(${currentSize}, 1fr)`;
 
   for (let i = 0; i < board.length; i++) {
     const cell = document.createElement("div");
     cell.classList.add("cell");
-    cell.style.fontSize = `${Math.floor(cellSize * 0.6)}px`;
 
     if (board[i]) {
       if (currentSkin === "waffle") {
