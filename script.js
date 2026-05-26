@@ -882,24 +882,30 @@ let isTurnLocked = false;
 function showScreen(screenId) {
   SoundEngine.menuClick();
 
-  // FIX: Only snapshot _prevScreen when navigating TO credits,
-  // AND only if the currently active screen is NOT credits itself.
-  // This prevents _prevScreen from being overwritten to "credits-screen"
-  // on rapid/duplicate calls, which would make BACK point back to credits.
+  // Credits screen no longer uses .ui-container — handle separately
+  const creditsEl = document.getElementById("credits-screen");
+
   if (screenId === "credits-screen") {
+    // Snapshot the currently active ui-container screen before opening credits
     const active = document.querySelector(".ui-container:not(.hidden)");
     if (active && active.id !== "credits-screen") {
       _prevScreen = active.id;
     }
-    // If active is already credits-screen, we silently bail — do not
-    // re-navigate, do not corrupt _prevScreen.
-    if (active && active.id === "credits-screen") return;
+    // Already open — bail
+    if (!creditsEl.classList.contains("hidden")) return;
   }
 
   if (screenId !== "result-screen") ConfettiEngine.stop();
+
+  // Hide all regular screens
   document
     .querySelectorAll(".ui-container")
     .forEach((el) => el.classList.add("hidden"));
+
+  // Always hide credits when navigating to any other screen
+  creditsEl.classList.add("hidden");
+
+  // Show the target screen
   document.getElementById(screenId).classList.remove("hidden");
 
   const videoBg = document.getElementById("bg-video");
