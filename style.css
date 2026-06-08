@@ -190,27 +190,11 @@ body, html {
     border-bottom: 1px solid rgba(255,255,255,0.2); padding-bottom: 10px;
 }
 
-/* -----------------------------------------------------------
-   UPDATE BOARD STYLING (FIX RESPONSIVE & GARIS MENANG)
-   ----------------------------------------------------------- */
 .board {
     display: grid; gap: 8px;
     background: rgba(255,255,255,0.1); padding: 15px; border-radius: 10px;
     backdrop-filter: blur(5px); border: 1px solid rgba(255,255,255,0.2);
-    
-    position: relative; /* Fix garis coretan menang terbang keluar layar */
-    width: 100%;
-    max-width: 450px;
-    aspect-ratio: 1 / 1; 
 }
-
-#preview-board {
-    position: relative;
-    width: 100%;
-    max-width: 320px;
-    aspect-ratio: 1 / 1;
-}
-
 .cell {
     background: rgba(0,0,0,0.5); display: flex;
     justify-content: center; align-items: center;
@@ -220,11 +204,6 @@ body, html {
 .cell:hover { background: rgba(255,255,255,0.1); }
 .cell.x { color: #e74c3c; }
 .cell.o { color: #3498db; }
-
-/* Mengatur ukuran font dinamis tergantung 3x3, 5x5, atau 6x6 */
-.board.size-3 .cell { font-size: clamp(40px, 12vw, 85px); }
-.board.size-5 .cell { font-size: clamp(24px, 7vw, 50px); }
-.board.size-6 .cell { font-size: clamp(18px, 5vw, 42px); }
 
 /* ============================================================
    PION POP-IN ANIMATION
@@ -346,8 +325,7 @@ body, html {
         padding: 8px; gap: 5px; box-sizing: border-box;
     }
 
-    /* BARIS INI TELAH DIHAPUS (Font cell jadi mengikuti kelas size dinamis) */
-    /* .cell { font-size: clamp(14px, 6vw, 36px) !important; border-radius: 3px; } */
+    .cell { font-size: clamp(14px, 6vw, 36px) !important; border-radius: 3px; }
 
     #match-winner-text { font-size: 36px !important; }
 }

@@ -882,30 +882,24 @@ let isTurnLocked = false;
 function showScreen(screenId) {
   SoundEngine.menuClick();
 
-  // Credits screen no longer uses .ui-container — handle separately
-  const creditsEl = document.getElementById("credits-screen");
-
+  // FIX: Only snapshot _prevScreen when navigating TO credits,
+  // AND only if the currently active screen is NOT credits itself.
+  // This prevents _prevScreen from being overwritten to "credits-screen"
+  // on rapid/duplicate calls, which would make BACK point back to credits.
   if (screenId === "credits-screen") {
-    // Snapshot the currently active ui-container screen before opening credits
     const active = document.querySelector(".ui-container:not(.hidden)");
     if (active && active.id !== "credits-screen") {
       _prevScreen = active.id;
     }
-    // Already open — bail
-    if (!creditsEl.classList.contains("hidden")) return;
+    // If active is already credits-screen, we silently bail — do not
+    // re-navigate, do not corrupt _prevScreen.
+    if (active && active.id === "credits-screen") return;
   }
 
   if (screenId !== "result-screen") ConfettiEngine.stop();
-
-  // Hide all regular screens
   document
     .querySelectorAll(".ui-container")
     .forEach((el) => el.classList.add("hidden"));
-
-  // Always hide credits when navigating to any other screen
-  creditsEl.classList.add("hidden");
-
-  // Show the target screen
   document.getElementById(screenId).classList.remove("hidden");
 
   const videoBg = document.getElementById("bg-video");
@@ -1225,14 +1219,7 @@ function renderBoard() {
   boardEl.classList.remove("skin-default", "skin-neon", "skin-waffle");
   boardEl.classList.add("skin-" + currentSkin);
 
-  // Use actual rendered board size so cells fit correctly on all screen sizes (including mobile)
-  // Hitung ukuran board dari viewport (bukan dari elemen itu sendiri)
-  // agar tidak terjadi feedback loop yang membuat board membesar terus
-  const isMobile = window.innerWidth <= 600;
-  const boardPadding = 30; // padding 15px x2
-  const maxBoardSize = isMobile
-    ? Math.min(window.innerWidth * 0.88, window.innerHeight - 170) - boardPadding
-    : 450;
+  const maxBoardSize = 450;
   const cellSize = Math.floor(maxBoardSize / currentSize);
   boardEl.style.gridTemplateColumns = `repeat(${currentSize}, ${cellSize}px)`;
   boardEl.style.gridTemplateRows = `repeat(${currentSize}, ${cellSize}px)`;
@@ -1317,30 +1304,15 @@ function botMove() {
     bestMove = currentSize === 3 ? getBestMoveMinimax() : getHeuristicMove();
   } else {
     if (currentDifficulty === "Medium") {
-      // 1. Cek apakah bot bisa menang langsung
       for (let i = 0; i < board.length; i++) {
         if (board[i] === null) {
-          board[i] = "O";
-          if (checkWin("O")) {
+          board[i] = "X";
+          if (checkWin("X")) {
             board[i] = null;
             bestMove = i;
             break;
           }
           board[i] = null;
-        }
-      }
-      // 2. Kalau tidak bisa menang, blokir player
-      if (bestMove === undefined) {
-        for (let i = 0; i < board.length; i++) {
-          if (board[i] === null) {
-            board[i] = "X";
-            if (checkWin("X")) {
-              board[i] = null;
-              bestMove = i;
-              break;
-            }
-            board[i] = null;
-          }
         }
       }
     }
@@ -1712,12 +1684,11 @@ function evaluateCell(index, player) {
 function getBestMoveMinimax() {
   let bestScore = -Infinity,
     move;
-  const boardCopy = [...board];
   for (let i = 0; i < 9; i++) {
-    if (boardCopy[i] === null) {
-      boardCopy[i] = "O";
-      const score = minimax(boardCopy, 0, false);
-      boardCopy[i] = null;
+    if (board[i] === null) {
+      board[i] = "O";
+      const score = minimax(board, 0, false);
+      board[i] = null;
       if (score > bestScore) {
         bestScore = score;
         move = i;
@@ -1727,57 +1698,27 @@ function getBestMoveMinimax() {
   return move;
 }
 
-// Check win on a specific board snapshot (safe for use inside minimax)
-function checkWinOnBoard(b, player) {
-  const s = currentSize, w = winCondition;
-  for (let r = 0; r < s; r++) {
-    for (let c = 0; c < s; c++) {
-      if (c <= s - w) {
-        let win = true;
-        for (let i = 0; i < w; i++) if (b[r*s + c+i] !== player) { win=false; break; }
-        if (win) return true;
-      }
-      if (r <= s - w) {
-        let win = true;
-        for (let i = 0; i < w; i++) if (b[(r+i)*s + c] !== player) { win=false; break; }
-        if (win) return true;
-      }
-      if (r <= s - w && c <= s - w) {
-        let win = true;
-        for (let i = 0; i < w; i++) if (b[(r+i)*s + c+i] !== player) { win=false; break; }
-        if (win) return true;
-      }
-      if (r <= s - w && c >= w - 1) {
-        let win = true;
-        for (let i = 0; i < w; i++) if (b[(r+i)*s + c-i] !== player) { win=false; break; }
-        if (win) return true;
-      }
-    }
-  }
-  return false;
-}
-
-function minimax(b, depth, isMaximizing) {
-  if (checkWinOnBoard(b, "O")) return 10 - depth;
-  if (checkWinOnBoard(b, "X")) return depth - 10;
-  if (b.every((cell) => cell !== null)) return 0;
+function minimax(newBoard, depth, isMaximizing) {
+  if (checkWin("O")) return 10 - depth;
+  if (checkWin("X")) return depth - 10;
+  if (newBoard.every((cell) => cell !== null)) return 0;
   if (isMaximizing) {
     let best = -Infinity;
     for (let i = 0; i < 9; i++) {
-      if (b[i] === null) {
-        b[i] = "O";
-        best = Math.max(best, minimax(b, depth + 1, false));
-        b[i] = null;
+      if (newBoard[i] === null) {
+        newBoard[i] = "O";
+        best = Math.max(best, minimax(newBoard, depth + 1, false));
+        newBoard[i] = null;
       }
     }
     return best;
   } else {
     let best = Infinity;
     for (let i = 0; i < 9; i++) {
-      if (b[i] === null) {
-        b[i] = "X";
-        best = Math.min(best, minimax(b, depth + 1, true));
-        b[i] = null;
+      if (newBoard[i] === null) {
+        newBoard[i] = "X";
+        best = Math.min(best, minimax(newBoard, depth + 1, true));
+        newBoard[i] = null;
       }
     }
     return best;
